@@ -1,0 +1,3 @@
+include petroglyphsmap/config/deployment.ini_tmpl
+recursive-include petroglyphsmap/public *
+recursive-include petroglyphsmap/templates *

@@ -1,0 +1,8 @@
+
+This package is maintained by the The LDPL (Laboratoire Départemental de 
+Préhistoire du Lazaret)
+
+
+Contributors
+============
+  Gabriel VATIN (2011)
