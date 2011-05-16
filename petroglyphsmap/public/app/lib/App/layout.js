@@ -57,7 +57,18 @@ App.layout = (function() {
             new OpenLayers.Layer.OSM(
                 "OSMap (T@H)",
                 "http://tah.openstreetmap.org/Tiles/tile/${z}/${x}/${y}.png"
-            )
+            ),
+			new OpenLayers.Layer.WMS(
+				"Sommets",
+				"http://www.camptocamp.org/cgi-bin/mapserv_c2corg",
+				{
+					layers: 'summits,routes,huts,parkings,sites',
+					format: 'png',
+					transparent: true
+				}, {
+					singleTile: true
+				}
+			)
         ];
     };
 
