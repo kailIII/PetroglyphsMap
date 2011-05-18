@@ -1,19 +1,5 @@
-This file is for you to describe the PetroglyphsMap application. Typically
-you would include information such as the information below:
+This is a Subversion repository; use the 'svnadmin' tool to examine
+it.  Do not add, delete, or modify files here unless you know how
+to avoid corrupting the repository.
 
-Installation and Setup
-======================
-
-Install ``PetroglyphsMap`` using easy_install::
-
-    easy_install PetroglyphsMap
-
-Make a config file as follows::
-
-    paster make-config PetroglyphsMap config.ini
-
-Tweak the config file as appropriate and then setup the application::
-
-    paster setup-app config.ini
-
-Then you are ready to go.
+Visit http://subversion.tigris.org/ for more information.
