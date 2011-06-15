@@ -1,105 +1,108 @@
 """The application's model objects"""
-from petroglyphsmap.model.meta import Session, Base
-
-
-#def init_model(engine):
-#    """Call me before using any of the tables or classes in the model"""
-#    Session.configure(bind=engine)
-    
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
-from datetime import datetime
 from geoalchemy import *
 
-engine = create_engine('postgresql://postgres:postgres@localhost/postgres', echo=True)
-session = sessionmaker(bind=engine)
+from petroglyphsmap.model.meta import Session, Base
 
-metadata = MetaData(engine)
-Begogeo = declarative_base(metadata=metadata)
 
-## Functions to find ID from Zone, Group, Rock, Figure names
-def groupidFromZg(zonenum, groupnum):
-    for rock in session.query(Rock).filter(Rock.rock==rocknum).filter(Rock.group_id==Group.id).filter(Group.group==groupnum).filter(Group.zone_id==zonenum)
-    return rock.rock_id
-
-def rockidFromZgr(zonenum, groupnum, rocknum):
-    for rock in session.query(Rock).filter(Rock.rock==rocknum).filter(Rock.group_id==Group.id).filter(Group.group==groupnum).filter(Group.zone_id==zonenum)
-    return rock.rock_id
-
-def figureidFromZgrf(zonenum, groupnum, rocknum, figurename):
-    for fig in session.query(Figure).filter(Figure.figure==figurename).filter(Figure.rock_id==Rock.rock_id).filter(Rock.rock==rocknum).filter(Rock.group_id==Group.id).filter(Group.group==groupnum).filter(Group.zone_id==zonenum)
-    return fig.figure_id
-
+def init_model(engine):
+    """Call me before using any of the tables or classes in the model"""
+    Session.configure(bind=engine)
 
 ## Data model Zone - Group - Rock - Figure
-class Zone(Begogeo):
-    __tablename__ = 'zone'
-    zone = Column(Integer, primary_key=True)
-    geo_poly = GeometryColumn(Polygon(2))
-    geo_centro = GeometryColumn(Point(2))
-    
-    def __init__(self, zone):
-        self.zone = zone
+## The acronym ZGRF means Zone - Group - Rock - Figure, and will be used for functions and variables
 
-        
-class Group(Begogeo):
-    __tablename__ = 'group'
-    group_id = Column(Integer, primary_key=True)
-    group = Column(Integer, nullable=False)
-    zone_id = Column(Integer, ForeignKey('zone.zone'))        # Many-to-one relation
-    geo_poly = GeometryColumn(Polygon(2))
-    geo_centro = GeometryColumn(Point(2))
-    
-    def __init__(self, zone, group):
-        self.group = group
-        self.zone_id = zone
+# Import table classes
+from petroglyphsmap.model.zone import Zone
+from petroglyphsmap.model.group import Group
+from petroglyphsmap.model.rock import Rock
+from petroglyphsmap.model.figure import Figure
 
-        
-class Rock(Begogeo):
-    __tablename__ = 'rock'
-    rock_id = Column(Integer, primary_key=True)
-    rock = Column(Unicode(10), nullable=False)
-    group_id = Column(Integer, ForeignKey('group.group_id'))  # Many-to-one relation
-    x = Column(Float, nullable=False)
-    y = Column(Float, nullable=False)
-    z = Column(Float)
-    geo_point = GeometryColumn(Point(2))
-    
-    # Relationship wetween rocks and groups
-    grouprocks = relationship(Group, backref=backref('rock', order_by=rock))
-    
-    def __init__(self, zone, group, rock, x, y, z):
-        self.rock = rock
-        self.group_id = groupidFromZg(zone, group)
-        self.x = x
-        self.y = y
-        self.z = z
-        self.geo_point = WKTSpatialElement("POINT(" + x + " " + y + ")")    # Geographic object (2D)
+# Functions to find ID from Zone, Group, Rock, Figure names
+def groupid_from_zg(zonenum, groupnum):
+    """Gives the ID of a group knowing its group number and zone number"""
+    gp = session.query(Group).filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).one()
+    return gp.group_id
 
-        
-class Figure(Begogeo):
-    __tablename__ = 'figure'
-    figure_id = Column(Integer, primary_key=True)
-    figure = Column(Unicode(5), nullable=False)
-    rock_id = Column(Integer, ForeignKey('rock.rock_id'))     # Many-to-one relation
-    identite = Column(Unicode(30), index=True)                # Index to improve the queries
-    code2 = Column(Unicode(30), index=True)                   # Index to improve the queries
-    
-    # Relationship wetween figures and rocks
-    rockfigures = relationship(Rock, backref=backref('figure', order_by=figure))
-    
-    def __init__(self, zone, group, rock, figure, identite, code2):
-        self.figure = figure
-        self.identite = identite
-        self.code2 = code2
-        self.rock_id = rockidFromZgr(zone, group, rock)
+def rockid_from_zgr(zonenum, groupnum, rocknum):
+    """Gives the ID of a rock knowing its rock number, group number and zone number"""
+    rck = session.query(Rock).filter(Rock.rock_number==rocknum).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).one()
+    return rck.rock_id
 
+def figureid_from_zgrf(zonenum, groupnum, rocknum, figurenumb):
+    """Gives the ID of a figure knowing its figure number, rock number, group number and zone number"""
+    fg = session.query(Figure).\
+        filter(Figure.figure_number==figurenumb).\
+        filter(Figure.rock_id==Rock.rock_id).\
+        filter(Rock.rock_number==rocknum).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).one()
+    return fg.figure_id
 
-## Load Geometry fcts
+## Statistics on Zone, Group, Rock, Figure
+def countrock_by_z(zonenum):
+    """Counts the number of rocks in a given zone, knowing the zone number"""
+    rcks = session.query(Rock).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).all()
+    nbRcks = session.query(func.count(rcks))
+    return nbRcks
+    
+def countrock_by_zg(zonenum, groupnum):
+    """Counts the number of rocks in a given group, knowing the ZG numbers"""
+    rcks = session.query(Rock).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).all()
+    nbRcks = session.query(func.count(rcks))
+    return nbRcks
+
+def countfig_by_z(zonenum):
+    """Counts the number of figures in a given zone, knowing the zone numbers"""
+    figs = session.query(Figure).\
+        filter(Figure.rock_id==Rock.rock_id).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).all()
+    nbFigs = session.query(func.count(figs))
+    return nbFigs
+
+def countfig_by_zg(zonenum, groupnum):
+    """Counts the number of figures in a given group, knowing the ZG numbers"""
+    figs = session.query(Figure).\
+        filter(Figure.rock_id==Rock.rock_id).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).all()
+    nbFigs = session.query(func.count(figs))
+    return nbFigs
+
+def countfig_by_zgr(zonenum, groupnum, rocknum):
+    """Counts the number of figures on a given rock, knowing the ZGR numbers"""
+    figs = session.query(Figure).\
+        filter(Figure.rock_id==Rock.rock_id).\
+        filter(Rock.rock_number==rocknum).\
+        filter(Rock.group_id==Group.id).\
+        filter(Group.group_number==groupnum).\
+        filter(Group.zone_id==Zone.zone_id).\
+        filter(Zone.zone_number==zonenum).all()
+    nbFigs = session.query(func.count(figs))
+    return nbFigs
+
+## Load Geometry functions
 GeometryDDL(Zone.__table__)
 GeometryDDL(Group.__table__)
 GeometryDDL(Rock.__table__)
-
-metadata.drop_all()   # comment this on first occassion
-metadata.create_all()
