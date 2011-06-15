@@ -8,7 +8,7 @@ class Figure(Base):
     """Table for the figures"""
     __tablename__ = 'figure'
     figure_id = Column(Integer, primary_key=True)
-    figure_number = Column(Unicode(5), nullable=False)
+    figure_number = Column(Unicode(15), nullable=False)
     rock_id = Column(Integer, ForeignKey('rock.rock_id'))                     # Many-to-one relation
     identity = Column(Unicode(30), index=True)                                # Index to improve the queries
     alternative_identity = Column(Unicode(30), index=True)                    # Index to improve the queries
