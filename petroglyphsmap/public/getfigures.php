@@ -3,7 +3,7 @@
 session_start ();
 
 /*
-* Initialisation de la requête SQL
+* Initialize SQL query
 */
 ini_set ('max_execution_time', 0); // no time limit
 $sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres");
@@ -18,7 +18,7 @@ $rockid = $_POST['rockid'];
 */
 if( ($_POST['checkbox'] == 'true') && ($_SESSION['identitystring'] != '') ) // si l'on a choisi d'appliquer le filtre à l'affichage des roches, et que le filtre est bien renseigné
     $filter = " AND UPPER(figure.identity) LIKE UPPER('".$_SESSION['identitystring']."') ";
-else // sinon rien n'est filtré
+else // else nothing is filtered
     $filter = '';
 
 $query = "

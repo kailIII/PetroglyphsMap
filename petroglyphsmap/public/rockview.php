@@ -3,13 +3,13 @@
 session_start ();
 
 /*
-* Initialisation de la requête SQL
+* Initialize SQL query
 */
 ini_set ('max_execution_time', 0); // Aucune limite d'execution
 $sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres"); // Base géographique du Bego
 
 /*
-* Variables utiles
+* Useful variables
 */
 $identitystring = str_replace('*', '%', $_POST['identitystring']); // on récupère le code figure demandé dans le formulaire, en remplacant * par % (pour le SQL)
 $_SESSION['identitystring'] = $identitystring;
@@ -22,7 +22,7 @@ $mapname = "tmp/wfs_rockview".$id.".map"; // nom du mapfile unique qui va être c
 $_SESSION['rockview'] = $viewname;
 
 /*
-* Création d'un nouveau Mapfile temporaire, spécifique au filtre
+* New temporary Mapfile, specific to the filter
 */
 $map = ms_newMapObj("wfs_rockview.map"); // mapfile WFS de référence pour créer la vue
 $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // on modifie le chemin d'accès URL
@@ -32,7 +32,7 @@ $rocks->set('data', 'geo_point FROM ( select r.rock_id, r.rock_number, r.point_x
 $map->save($mapname); // sauvagarde dans le dossier /tmp
 
 /*
-* Création de la vue postgres
+* Postgres view
 */
 $query_view = "
     CREATE OR REPLACE VIEW ".$viewname." AS
@@ -45,7 +45,7 @@ $query_view = "
 pg_query($sessionpg, $query_view);
 
 /*
-* Réponse JSON
+* JSON response
 */
 $data = array ("success"=>true, "mapfile"=>$mapname, "viewname"=>$viewname);
 echo json_encode($data);

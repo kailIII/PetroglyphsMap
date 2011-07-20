@@ -3,19 +3,19 @@
 session_start ();
 
 /*
-* Initialisation de la requête SQL
+* Initialize SQL query
 */
-ini_set ('max_execution_time', 0); // Aucune limite d'execution
-$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres"); // Base géographique du Bego
+ini_set ('max_execution_time', 0); // no time limit
+$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres");
 
 /*
-* Variables utiles
+* Useful variables
 */
 $stattype = $_POST['stattype'];
 $scale = $_POST['scale'];
 $identitystring = $_POST['identitystring2'];
 
-$id = $_SESSION['idconnexion']; // identifiant donné par la session php
+$id = $_SESSION['idconnexion']; // id given by the PHP session
 if($identitystring != null) {
     $identitystring = str_replace('*', '%', $_POST['identitystring']);
     $filter = "WHERE UPPER(figure.identity) LIKE UPPER('".$identitystring."')";
@@ -25,22 +25,23 @@ if($identitystring != null) {
 if ($scale == 'Zone') {
 
     $typename = 'zones';
-    $viewname = "zonestats".$id; // nom de la vue unique qui va être créée
-    $mapname = "tmp/wfs_zonestats".$id.".map"; // nom du mapfile unique qui va être créé
+    $viewname = "zonestats".$id; // name of unique view to be created
+    $mapname = "tmp/wfs_zonestats".$id.".map"; // name of unique mapfile to be created
 
     $_SESSION['zonestats'] = $viewname;
 
     /*
-    * Création d'un nouveau Mapfile temporaire, spécifique au filtre
+    * New temporary Mapfile, specific to the filter
     */
-    $map = ms_newMapObj("wfs_zonestats.map"); // mapfile WFS de référence pour créer la vue
-    $zones = $map->getLayerByName("zones"); // on modifie le layer 'zones'
+    $map = ms_newMapObj("wfs_zonestats.map"); // WFS reference mapfile, to create the view mapfile
+    $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // modifying the url value
+    $zones = $map->getLayerByName("zones"); // modifying the 'zones' layer
     $zones->set('data', 'geo_centroid FROM (select zone_id, zone_number, geo_centroid, nb from '.$viewname.') as subquery using unique zone_id using srid=2154');
-    // on ne change que le nom de la table (vue) où vont être stockées les données de la requête
-    $map->save($mapname); // sauvagarde dans le dossier /tmp
+    // only the talbe name (view) is changed, where the result will be stored
+    $map->save($mapname); // saved in 'tmp' file
 
     /*
-    * Création de la vue postgres
+    * Postgres view
     */
     if ($stattype == 'Nombre de roches') {
         $query_view = "
@@ -73,22 +74,22 @@ if ($scale == 'Zone') {
 } else {
 
     $typename = 'rocks';
-    $viewname = "rockstats".$id; // nom de la vue unique qui va être créée
-    $mapname = "tmp/wfs_rockstats".$id.".map"; // nom du mapfile unique qui va être créé
+    $viewname = "rockstats".$id; // name of unique view to be created
+    $mapname = "tmp/wfs_rockstats".$id.".map"; // name of unique mapfile to be created
 
     $_SESSION['rockstats'] = $viewname;
 
     /*
-    * Création d'un nouveau Mapfile temporaire, spécifique au filtre
+    * New temporary Mapfile, specific to the filter
     */
-    $map = ms_newMapObj("wfs_rockstats.map"); // mapfile WFS de référence pour créer la vue
-    $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // on modifie le chemin d'accès URL
-    $rocks = $map->getLayerByName("rocks"); // on modifie le layer 'rocks'
+    $map = ms_newMapObj("wfs_rockstats.map"); // WFS reference mapfile, to create the view mapfile
+    $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // modifying the url value
+    $rocks = $map->getLayerByName("rocks"); // modifying the 'rocks' layer
     $rocks->set('data', 'geo_point FROM (select rock_id, rock_number, geo_point, nb from '.$viewname.') as subquery using unique rock_id using srid=2154');
-    $map->save($mapname); // sauvagarde dans le dossier /tmp
+    $map->save($mapname); // saved in 'tmp' file
 
     /*
-    * Création de la vue postgres
+    * Postgres view
     */
     $query_view = "
         CREATE OR REPLACE VIEW ".$viewname." AS
@@ -101,7 +102,7 @@ if ($scale == 'Zone') {
 pg_query($sessionpg, $query_view);
     
 /*
-* Recherche de la valeur max et min pour la cartographie à venir
+* Max and min value for cartography to come
 */
 $query_maxmin = "
     SELECT MAX(nb), MIN(nb)
@@ -114,7 +115,7 @@ $max = $row[0];
 $min = $row[1];
 
 /*
-* Réponse JSON
+* JSON response
 */
 $data = array ("success"=>true, "mapfile"=>$mapname, "viewname"=>$viewname, "typename"=>$typename, "scale"=>$scale, "stattype"=>$stattype, "min"=>$min, "max"=>$max);
 echo json_encode($data);
