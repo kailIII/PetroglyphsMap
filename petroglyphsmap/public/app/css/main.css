@@ -18,3 +18,13 @@
     height:20px !important;
     width:20px !important;
 }
+.zoomout {
+    background-image:url(../img/icon_zoomout.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
+.zoomfull {
+    background-image:url(../img/icon_zoomfull.png) !important;
+    height:20px !important;
+    width:20px !important;
+}
