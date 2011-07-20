@@ -1,0 +1,64 @@
+h1 {
+    text-align: center;
+    font-size: 0.75em;
+    font-style: italic;
+}
+
+div#mapDiv {
+    height: 90%;
+}
+
+.link {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.banner-theme{
+    background: transparent url(../img/banner.jpg) repeat-x scroll 0 0;
+}
+
+span#rockstatus {
+    width: 100%;
+    text-align: center;
+}
+
+.float-left {
+    float: left;
+}
+
+.clear-left {
+    clear: left;
+}
+
+.olControlAttribution {
+    top: 10px;
+}
+
+.gpControlPermanentLogo {
+    bottom: 10px;
+    left: 45%;
+    padding: 0px;
+}
+
+.gpControlPermanentLogo img {
+    margin: 0px;
+    padding: 0px;
+    border: 0px none;
+}
+
+.gpControlTermsOfService {
+    left: 45%;
+    padding: 0px;
+}  
+        
+.footer {
+    font-size: x-small;
+    text-align: center;
+    width: 100%;
+    position: inherit;
+}
+
+.filter-on {
+    color: rgb(255,0,0);
+    font-weight: bold;
+}

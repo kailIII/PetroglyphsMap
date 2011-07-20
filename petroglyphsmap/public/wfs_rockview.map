@@ -1,0 +1,41 @@
+MAP
+
+NAME "WFS Rockview server"
+STATUS ON
+EXTENT 1050010 6330080 1070000 6349980
+
+WEB
+  METADATA
+    "wfs_title"                  "WFS Rockview server" ## REQUIRED
+    "wfs_onlineresource"         "http://127.0.0.1/cgi-bin/mapserv.exe?map=wfs_rockview.map&" ## Recommended
+    "wfs_srs"                    "epsg:2154" ## Recommended
+    "wfs_abstract"               "This map presents filtered rocks and figures from the Vallee des Merveilles." ## Recommended
+  END
+END #end web definition
+
+PROJECTION
+  "init=epsg:2154"
+END #end projection
+
+#
+# Start of layer definitions
+#
+
+##################
+# Rocks
+##################
+LAYER
+    NAME 'rocks'
+    TYPE POINT
+    DUMP true
+    METADATA
+        "gml_include_items"     "rock_number,group_number,zone_number,point_x,point_y,point_z,year,nbfig"
+        "gml_featureid"         "rock_id" ## REQUIRED
+    END
+    CONNECTIONTYPE postgis
+    CONNECTION "dbname=begogeo host=localhost port=5432 user=postgres password=postgres"
+    DATA 'geo_point FROM (select r.rock_id, r.rock_number, r.point_x, r.point_y, r.point_z, r.geo_point, r.year, r.nbfig, g.group_number, z.zone_number from rock r join ("group" g join zone z on g.zone_id=z.zone_id) on r.group_id=g.group_id) as subquery using unique rock_id using srid=2154'
+    STATUS ON
+END #end rocks layer
+
+END #mapfile
