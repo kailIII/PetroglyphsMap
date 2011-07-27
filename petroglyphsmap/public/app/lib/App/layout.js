@@ -23,7 +23,10 @@ App.layout = (function() {
      * Private
      */
     
-    var map, center, zone_lyr, rock_lyr, propSymLyr, myWFS, layerStore, popup, popup2;
+    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2, GoogleEarthPanel;
+    var propSymLyr = null;
+    var popup = null;
+    var phpsession = document.cookie.substring(10, document.cookie.length-1);
     
     var epsg4326 = new OpenLayers.Projection("EPSG:4326");
     var lambert93 = new OpenLayers.Projection("EPSG:2154");
@@ -34,12 +37,14 @@ App.layout = (function() {
     * Create the map.
     *
     * Returns:
-    * {OpenLayers.Map} The OpenLayers.Map instance.
+    * {OpenLayers.Map} The OpenLayers.Map instance
     */
     var createMap = function() {
         
         // Center definition : Vallée des Merveilles
-        center = new OpenLayers.LonLat(7.4436, 44.0592);    // in WGS84 (longitude latitude)
+        center_lon = 7.4436;
+        center_lat = 44.0592;
+        center = new OpenLayers.LonLat(center_lon, center_lat);    // in WGS84 (longitude latitude)
         center.transform(epsg4326, proj_geop);  // center is now in geoportal projection
         
         var maxEx = new OpenLayers.Bounds(1050010, 6330080, 1070000, 6349980).transform(lambert93, proj_geop);
@@ -198,13 +203,21 @@ App.layout = (function() {
     * none
     *
     */
-    var addMapControls = function() {        
+    var addMapControls = function() {
+        // OpenLayers navigation control
         var navControl = new OpenLayers.Control.Navigation({
             type: OpenLayers.Control.TYPE_TOGGLE,
             zoomWheelEnabled: true
         });
         map.addControl(navControl);
         navControl.activate();
+        
+        // OpenLayers loading panel
+        /*var loadingPan = new OpenLayers.Control.LoadingPanel({
+            title: 'Chargement en cours'
+        });
+        map.addControl(loadingPan);
+        loadingPan.activate();*/
         
         // create select feature control for features
         var selectControl = new OpenLayers.Control.SelectFeature(
@@ -216,6 +229,15 @@ App.layout = (function() {
         );
         map.addControl(selectControl);
         selectControl.activate();
+        
+        // define function to change the values of a given field in a JSON object
+        function replaceByValue(json, field, oldvalue, newvalue) {
+            for( var k = 0; k < json.length; ++k ) {
+                if( oldvalue == json[k][field] ) {
+                    json[k][field] = newvalue ;
+                }
+            }
+        }
         
         // define "createPopup" function
         function createPopup(feature) {
@@ -257,133 +279,148 @@ App.layout = (function() {
             function createGrid(result, request) {
                 var win;                
                 var jsonData = Ext.util.JSON.decode(result.responseText);
-                
-                var store = new Ext.data.JsonStore ({
-                    // store configs
-                    autoDestroy: true,
-                    storeId: 'store',
-                    // reader configs
-                    idIndex: 0,
-                    fields: [
-                        {name: 'face', type: 'string'},
-                        {name: 'figure_number', type: 'string'},
-                        {name: 'identity',     type: 'string'},
-                        {name: 'alternative_identity',  type: 'string'}
-                    ],
-                    data: jsonData
-                });
-                
-                // create the Grid
-                var grid = new Ext.grid.GridPanel ({
-                    store: store,
-                    stateId: 'stateGrid',
-                    columns: [
-                        {
-                            header: 'Face',
-                            sortable: true, 
-                            dataIndex: 'face',
-                            width: 50
-                        },
-                        {
-                            header: 'Figure',
-                            sortable: true,
-                            dataIndex: 'figure_number',
-                            width: 50
-                        },
-                        {
-                            header: 'Code',
-                            sortable: true, 
-                            dataIndex: 'identity',
-                            width: 100
-                        },
-                        {
-                            header: 'Code alternatif',
-                            sortable: true,
-                            dataIndex: 'alternative_identity',
-                            width: 100
+                if (jsonData[0] == null) {
+                    alert("Aucune figure n'a été référencée.");
+                } else {                
+                    var store = new Ext.data.JsonStore ({
+                        // store configs
+                        autoDestroy: true,
+                        storeId: 'store',
+                        // reader configs
+                        idIndex: 0,
+                        fields: [
+                            {name: 'face', type: 'string'},
+                            {name: 'figure_number', type: 'string'},
+                            {name: 'identity',     type: 'string'},
+                            {name: 'alternative_identity',  type: 'string'}
+                        ],
+                        data: jsonData
+                    });
+                    
+                    // create the Grid
+                    var grid = new Ext.grid.GridPanel ({
+                        store: store,
+                        stateId: 'stateGrid',
+                        columns: [
+                            {
+                                header: 'Face',
+                                sortable: true, 
+                                dataIndex: 'face',
+                                width: 50
+                            },
+                            {
+                                header: 'Figure',
+                                sortable: true,
+                                dataIndex: 'figure_number',
+                                width: 70
+                            },
+                            {
+                                header: 'Code',
+                                sortable: true, 
+                                dataIndex: 'identity',
+                                width: 150
+                            },
+                            {
+                                header: 'Code alternatif',
+                                sortable: true,
+                                dataIndex: 'alternative_identity',
+                                width: 150
+                            }
+                        ],
+                        boxMaxHeight: 400,
+                        viewConfig: {
+                            stripeRows: true
                         }
-                    ],
-                    autoHeight: true,
-                    width: 300,
-                    viewConfig: {
-                        stripeRows: true
+                    });
+                    
+                    if (typeof(win) != "undefined") {
+                        win.destroy();
                     }
-                });
-                
-                if (typeof(win) != "undefined") {
-                    win.destroy();
+                    
+                    // display the grid in a window
+                    win = new Ext.Window ({
+                        title: 'Figures',
+                        autoWidth: true,
+                        height: 400,
+                        //boxMaxHeight: 400,
+                        autoScroll: true,
+                        layout: 'fit',
+                        x: 50,
+                        y: 150,
+                        items: grid,
+                        shadow: true
+                    });
+                    
+                    win.show();
                 }
-                
-                // display the grid in a window
-                win = new Ext.Window ({
-                    title: 'Figures',
-                    autoWidth: true,
-                    autoScroll: true,
-                    height: 400,
-                    layout: 'fit',
-                    x: 50,
-                    y: 150,
-                    items: grid,
-                    shadow: true
-                });
-                
-                win.show();
             }
             
             function createPie(result, request) {
                 var win;
                 var jsonData = Ext.util.JSON.decode(result.responseText);
-                
-                var store = new Ext.data.JsonStore ({
-                    // store configs
-                    autoDestroy: true,
-                    storeId: 'store',
-                    // reader configs
-                    idIndex: 0,
-                    fields: [
-                        {name: 'type', type: 'string'},
-                        {name: 'count', type: 'integer'}
-                    ],
-                    data: jsonData
-                });
-                
-                // create the pie
-                var piePanel = new Ext.Panel({
-                    height: 300,
-                    autoWidth: true,
-                    items: {
-                        xtype: 'piechart',
-                        store: store,
-                        dataField: 'count',
-                        categoryField: 'type',
-                        extraStyle: {
-                            legend:{
-                                display: 'right',
-                                padding: 10,
-                                border:{
-                                   color: '#CBCBCB',
-                                   size: 1
+                if (jsonData[0] == null) {
+                    alert("Aucune figure n'a été référencée.");
+                } else {                    
+                    // replace all the letters by real names
+                    replaceByValue(jsonData, 'type', 'C', 'Corniformes');
+                    replaceByValue(jsonData, 'type', 'P', 'Poignards');
+                    replaceByValue(jsonData, 'type', 'F', 'Hallebardes');
+                    replaceByValue(jsonData, 'type', 'T', 'Attelages');
+                    replaceByValue(jsonData, 'type', 'H', 'Anthropomorphes');
+                    replaceByValue(jsonData, 'type', 'R', 'Figures géométriques');
+                    replaceByValue(jsonData, 'type', 'N', 'Non identifiées');
+                    
+                    var store = new Ext.data.JsonStore ({
+                        // store configs
+                        autoDestroy: true,
+                        storeId: 'store',
+                        // reader configs
+                        idIndex: 0,
+                        fields: [
+                            {name: 'type', type: 'string'},
+                            {name: 'count', type: 'integer'}
+                        ],
+                        data: jsonData
+                    });
+                    
+                    // create the pie
+                    var piePanel = new Ext.Panel({
+                        height: 300,
+                        autoWidth: true,
+                        items: {
+                            xtype: 'piechart',
+                            store: store,
+                            dataField: 'count',
+                            categoryField: 'type',
+                            extraStyle: {
+                                legend:{
+                                    display: 'right',
+                                    padding: 10,
+                                    border:{
+                                       color: '#CBCBCB',
+                                       size: 1
+                                    }
                                 }
                             }
                         }
+                    });
+                    
+                    if (typeof(win) != "undefined") {
+                        win.destroy();
                     }
-                });
-                
-                if (typeof(win) != "undefined") {
-                    win.destroy();
+                    
+                    // display the pie in a window
+                    win = new Ext.Window ({
+                        title: 'Diagramme des types de figures',
+                        width: 400,
+                        autoHeight: true,
+                        layout: 'fit',
+                        items: piePanel,
+                        shadow: true
+                    });
+                    
+                    win.show();
                 }
-                
-                // display the pie in a window
-                win = new Ext.Window ({
-                    title: 'Diagramme des types de figures',
-                    width: 400,
-                    autoHeight: true,
-                    layout: 'fit',
-                    items: piePanel,
-                    shadow: true
-                });
-                
-                win.show();
             }
             
             var list = document.getElementById('list');
@@ -425,6 +462,26 @@ App.layout = (function() {
         function destroyPopup(feature) {
             popup.destroy();
         }
+        
+        // Loading window while data are loading to the map
+        var loadingWin = new Ext.Window ({
+            autoWidth: true,
+            autoHeight: true,
+            layout: 'fit',
+            shadow: true,
+            items: {
+                autoWidth: true,
+                autoHeight: true,
+                html: '<img src="img/loading.gif" /><p>Chargement des données</p>',
+                bodyStyle: 'margin-left: auto; margin-right: auto; text-align: center;'
+            },
+            hidden: true,
+            closable: false
+        });
+        
+        // add this window for rocks layer only
+        rock_lyr.events.register('loadstart', loadingWin, function(){loadingWin.show()});
+        rock_lyr.events.register('loadend', loadingWin, function(){loadingWin.hide()});
     };
     
     /**
@@ -459,9 +516,31 @@ App.layout = (function() {
                     fieldLabel: 'Code figure',
                     id: 'identitystring',
                     name: 'identitystring',
-                    allowBlank: false,
-                    msgTarget: 'side',
                     width: 110
+                }, {
+                    xtype: 'combo',
+                    id: 'zonecombo',
+                    name: 'zonecombo',
+                    width: 110,
+                    fieldLabel: 'Zone(s)',
+                    typeAhead: true,
+                    editable: false,
+                    triggerAction: 'all',
+                    mode: 'local',
+                    value: 0,
+                    store: new Ext.data.ArrayStore({
+                        id: 'zonestore',
+                        autoLoad: false,
+                        pruneModifiedRecords: true,
+                        fields: [
+                            'zoneTxt',
+                            'zoneNumber'
+                        ],
+                        data: [['Tout', 0], ['1', 1], ['2', 2], ['3', 3], ['4', 4], ['5', 5], ['6', 6], ['7', 7], ['8', 8], ['9', 9], ['10', 10], ['11', 11], ['12', 12]]
+                    }),
+                    valueField: 'zoneNumber',
+                    displayField: 'zoneTxt',
+                    allowBlank: false
                 }, {
                     xtype: 'checkbox',
                     boxLabel: 'Filtrer la description des roches',
@@ -488,30 +567,36 @@ App.layout = (function() {
                 collapsible: true,
                 collapsed: true,
                 frame: true,
-                html: '<p><i>Code figure</i> : code des figures à afficher. Le caractère <i>*</i> représente tout texte.<br/>Ex : <i>c2*</i> pour rechercher les corniformes avec corps (tout code commençant par "C2").</p><p><i>Filtrer la description des roches</i> : la fiche descriptive des roches, activée par un clic, ne prendra en compte que les roches filtrées.</p>',
+                html: '<p><i>Code figure</i> : code des figures à afficher. Le caractère <i>*</i> représente tout texte.<br/>Ex : <i>c2*</i> pour rechercher les corniformes avec corps (tout code commençant par "C2").</p><p><i>Zone</i> : numéro de la (les) zone(s) à afficher.</p><p><i>Filtrer la description des roches</i> : la fiche descriptive des roches, activée par un clic, ne prendra en compte que les roches filtrées.</p>',
                 cls: 'help-box'
             }]
         });
         
         function displayFilter(result, action) {
             var filtertxt = document.getElementById('identitystring').value;
+            var zonetxt = 'Z' + document.getElementById('zonecombo').value;
             
             var obj = Ext.util.JSON.decode(action.response.responseText); // response object with the mapfile path for WFS
             rock_lyr.url = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=C:\\ms4w\\Apache\\htdocs\\" + obj.mapfile + "&";
-            rock_lyr.redraw(); // new display of the map
+            rock_lyr.setVisibility(true); // display the map
             document.getElementById('formstatus').innerHTML = 'Filtre activé'; // status update
             document.getElementById('formstatus').className = 'filter-on';
-            document.getElementById('rockstatus').innerHTML = '<img src="img/filter.png" alt="Filtre ' + filtertxt + '" title="Filtre ' + filtertxt + '"/>';
+            document.getElementById('rockstatus').innerHTML = '<img src="img/filter.png" alt="Filtre ' + filtertxt + zonetxt + '" title="Filtre ' + filtertxt + zonetxt + '"/>';
         }
         
         // Function to create a DB view from Rock table and display it on the map
         function filterform_submit() {
-            if (typeof(popup) != 'undefined') {
+            if (popup != null) {
                 popup.destroy();
             }
+            rock_lyr.setVisibility(false); // hide the map
+            
             filterform.form.submit({
                 url: 'rockview.php',
                 method: 'POST',
+                params: {
+                    log: phpsession
+                },
                 reset: false,
                 failure: function(result, action) {
                     alert('Erreur');
@@ -522,11 +607,11 @@ App.layout = (function() {
         
         // Function to delete all filters
         function filterform_destroy() {
-            if (typeof(popup) != null) {
+            if (popup != null) {
                 popup.destroy();
             }
+            rock_lyr.setVisibility(false); // hide the map
             rock_lyr.url = myWFS; // back to default WFS (no filter)
-            rock_lyr.redraw(); // new map display
             document.getElementById('formstatus').innerHTML = 'Filtre désactivé'; // status update
             document.getElementById('formstatus').className = 'x-panel';
             document.getElementById('rockstatus').innerHTML = '';
@@ -535,7 +620,7 @@ App.layout = (function() {
             // delete the created view from the DB and the temporary mapfile
             Ext.Ajax.request({
                 method: 'POST',
-                url: 'reinit.php'
+                url: 'reinit_rockview.php'
             });
             
             filterform.getForm().reset();
@@ -655,8 +740,8 @@ App.layout = (function() {
                     xtype: 'textfield',
                     width: 120,
                     fieldLabel: '<i>Code figure (facultatif)</i>',
-                    id: 'identitystring2',
-                    name: 'identitystring2',
+                    id: 'filterstring',
+                    name: 'filterstring',
                     allowBlank: true,
                 }, {
                     xtype: 'button',
@@ -693,6 +778,9 @@ App.layout = (function() {
             carto.form.submit({
                 url: 'stats.php',
                 method: 'POST',
+                params: {
+                    log: phpsession
+                },
                 reset: false,
                 failure: function(result, action) {
                     alert('Erreur');
@@ -708,9 +796,16 @@ App.layout = (function() {
                 popup2.destroy();
             }
             // If the layer is already on the map : destroy it
-            if (typeof(propSymLyr) != 'undefined') {
+            if (propSymLyr != null) {
                 map.removeLayer(propSymLyr);
+                propSymLyr = null;
             }
+            
+            // delete the created view from the DB and the temporary mapfile
+            Ext.Ajax.request({
+                method: 'POST',
+                url: 'reinit_stats.php'
+            });
         }
         
         // Add a layer of proportional circles, based on JSON response
@@ -891,6 +986,102 @@ App.layout = (function() {
     * Ext.Panel Panel with the whole layers.
     */
     var createLayerPanel = function() {
+    
+        // Update 3d map to the actual center
+        function update3d() {
+            var cent = map.getCenter();
+            cent.transform(proj_geop, epsg4326);
+            GoogleEarthPanel.url = 'ge.html?lon=' + cent.lon + '&lat=' + cent.lat;
+            console.log(cent.lon + ' ' + cent.lat);
+            console.log(GoogleEarthPanel.el);
+            console.log('-----');
+            GoogleEarthPanel.el.update();
+        }
+        
+        function exportKml() {
+            if (rock_lyr.visibility == false) {
+                alert("Aucune roche n'est affichée...");
+            } else {
+                var l = rock_lyr.clone();
+                var f = l.features;
+                var kmlwriter = new OpenLayers.Format.KML();
+
+                var kmlobj = write_2(kmlwriter, f);
+                
+                if (window.ActiveXObject) /*code for IE*/ {
+                    var kmlstring = kmlobj.xml;
+                } else /*code for Mozilla, Firefox, Opera, etc.*/ {
+                    var kmlstring = new XMLSerializer().serializeToString(kmlobj);
+                }
+                l.destroy();
+                
+                var kmlwin = new Ext.Window({
+                    title: 'Fichier KML',
+                    width: 450,
+                    height: 450,
+                    autoScroll: true,
+                    layout: 'fit',
+                    shadow: true,
+                    items: [{
+                        xtype: 'textarea',
+                        id: 'kmlstring',
+                        value: kmlstring,
+                        readOnly: true,
+                        width: 400,
+                        height: 400
+                    }]
+                });
+                kmlwin.show();
+            }
+        }
+        
+        function write_2(kmlfile, features) {
+            
+            var kml = document.createElementNS("http://earth.google.com/kml/2.2", "kml");
+            var doc = kmlfile.createElementNS('', 'Document');
+            var folder = kmlfile.createElementNS('', 'Folder');
+            var folderName = kmlfile.createElementNS('', 'name');
+            folderName.appendChild(kmlfile.createTextNode('Roches'));
+            folder.appendChild(folderName);
+            
+            for (var i=0; i < features.length; i++) {
+                features[i].geometry.transform(proj_geop, epsg4326);
+                folder.appendChild(createPlacemarkXML_2(kmlfile, features[i]));
+            }
+            
+            doc.appendChild(folder);
+            kml.appendChild(doc);
+            
+            return kml;
+        }
+        
+        function createPlacemarkXML_2(kmlfile, feature) {            
+            // Placemark name
+            var placemarkName = kmlfile.createElementNS('', "name");
+            var name = feature.attributes.rock_number;
+            placemarkName.appendChild(kmlfile.createTextNode(name));
+
+            // Placemark description
+            var placemarkDesc = kmlfile.createElementNS('', "description");
+            var desc = 'Zone ' + feature.attributes.zone_number + ', Groupe ' + feature.attributes.group_number + ', Roche ' + feature.attributes.rock_number + ', Lever ' + feature.attributes.yaer;
+            placemarkDesc.appendChild(kmlfile.createTextNode(desc));
+
+            // Placemark
+            var placemarkNode = kmlfile.createElementNS('', "Placemark");
+            if(feature.fid != null) {
+            placemarkNode.setAttribute("id", feature.fid);
+            }
+            placemarkNode.appendChild(placemarkName);
+            placemarkNode.appendChild(placemarkDesc);
+
+            // Geometry node (Point, LineString, etc. nodes)
+            var geometryNode = kmlfile.buildGeometryNode(feature.geometry);
+            placemarkNode.appendChild(geometryNode);
+
+            // TBD - deal with remaining (non name/description) attributes.
+            return placemarkNode;
+        }
+    
         var panel = new Ext.Panel({
             title: "Cartes",
             defaults: {
@@ -899,18 +1090,32 @@ App.layout = (function() {
                 layout: 'fit'
             },
             items : [{
-                    title: "Affichage",
-                    xtype: "treepanel",
+                    title: 'Affichage',
+                    xtype: 'treepanel',
                     loader: new Ext.tree.TreeLoader({
                         applyLoader: false
                     }),
                     root: {
-                        nodeType: "gx_layercontainer",
+                        nodeType: 'gx_layercontainer',
                         layerStore: layerStore,
                         leaf: false,
                         expanded: true
                     },
                     rootVisible: false
+                }, {
+                    title: '3D',
+                    xtype: 'button',
+                    id: '3dpanel',
+                    text: 'Synchroniser la carte 3D',
+                    handler: update3d,
+                    style: 'margin-left: auto; margin-right: auto; text-align: center;'
+                }, {
+                    title: 'exportKml',
+                    xtype: 'button',
+                    id: 'exportKml',
+                    text: 'Exporter en KML',
+                    handler: exportKml,
+                    style: 'margin-left: auto; margin-right: auto; text-align: center;'
                 }, {
                     title: 'Légende',
                     collapsible: true,
@@ -968,6 +1173,24 @@ App.layout = (function() {
         }));        
         return actions;
     };
+    
+    var addGoogleEarthPanel = function() {
+        
+        panel_frame = Ext.extend (Ext.Panel, {
+            onRender: function(ct, position) {
+                this.el = ct.createChild({tag: 'iframe', id: 'iframe-'+ this.id, frameBorder: 0, src: this.url});
+            }
+        });
+        
+        var panel = new panel_frame({
+            id: "googleearthpanel",
+            url: 'ge.html?lon=' + center_lon + '&lat=' + center_lat,
+            style: 'width: 100%; height: 100%;',
+            layout: 'fit'
+        });
+        
+        return panel;
+    };
 
     /*
     * Public
@@ -1005,6 +1228,7 @@ App.layout = (function() {
                     html: "<a href='http://www.google.com'>Guide d'utilisation</a><br/><a href='http://www.ensg.eu'>Documentation technique</a>"
                 }]
             });
+            GoogleEarthPanel = addGoogleEarthPanel();
 
             // General Viewport of MapFish application
             new Ext.Viewport({
@@ -1032,6 +1256,13 @@ App.layout = (function() {
                     xtype: 'tabpanel',
                     activeTab: 0,
                     items: [layerPanel, filterform, carto, footer]
+                }, {
+                    region: 'east',
+                    title: 'Google Earth',
+                    width: '40%',
+                    collapsible: true,
+                    items: [GoogleEarthPanel],
+                    hidden: true
                 }]
             });
         }
