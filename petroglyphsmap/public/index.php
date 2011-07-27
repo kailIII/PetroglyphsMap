@@ -1,7 +1,6 @@
 <?php
 
 session_start ();
-$_SESSION['idconnexion'] = date('His').rand();
 
 ?>
 
@@ -20,9 +19,8 @@ $_SESSION['idconnexion'] = date('His').rand();
         <link rel="stylesheet" type="text/css" href="lib/openlayers/theme/default/style.css"></link>
         <link rel="stylesheet" type="text/css" href="app/css/main.css"></link>
 
-        <script type="text/javascript" src="lib/ext/Ext/adapter/ext/ext-base.js"></script>
-
-        <!-- debug mode (begin) -->
+        <script type="text/javascript" src="lib/ext/Ext/adapter/ext/ext-base.js"></script>        
+        
         <script type="text/javascript" src="lib/ext/Ext/ext-all-debug.js"></script>
         <script type="text/javascript" src="lib/openlayers/lib/OpenLayers.js"></script>
         <script type="text/javascript" src="lib/geoext/lib/GeoExt.js"></script>
@@ -31,15 +29,23 @@ $_SESSION['idconnexion'] = date('His').rand();
         <script type="text/javascript" src="http://depot.ign.fr/geoportail/api/js/1.2/GeoportalExtended.js"></script>
         <script type="text/javascript" src="app/lib/App/layout.js"></script>
         <script type="text/javascript" src="app/lib/App/main.js"></script>
-        <!-- debug mode (end) -->
-
-        <!-- non debug mode (begin) -->
-        <!--
-        <script type="text/javascript" src="build/app.js"></script>
-        -->
-        <!-- non debug mode (end) -->
         
-        <script type="text/javascript"> window.onbeforeunload = function(e){ $.post('reinit.php');} </script>
+        <script type="text/javascript">
+        // once the window is loaded, create a session cookie for 24h
+        window.onload = function(e){
+            var expDate = new Date();
+            expDate.setTime(expDate.getTime() + (24 * 3600 * 1000));    // time in milliseconds : one whole day
+            document.cookie += ";expires=" + expDate.toGMTString();
+        };
+        
+        // while leaving the page, destroy the views and temporary mapfiles
+        window.onbeforeunload = function(e){
+            Ext.Ajax.request({
+                method: 'POST',
+                url: 'reinit.php'
+            });
+        };
+        </script>
 
     </head>
 

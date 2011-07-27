@@ -13,12 +13,12 @@ $sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres p
 */
 $stattype = $_POST['stattype'];
 $scale = $_POST['scale'];
-$identitystring = $_POST['identitystring2'];
+$filterstring = $_POST['filterstring'];
+$id = $_POST['log'];
 
-$id = $_SESSION['idconnexion']; // id given by the PHP session
-if($identitystring != null) {
-    $identitystring = str_replace('*', '%', $_POST['identitystring']);
-    $filter = "WHERE UPPER(figure.identity) LIKE UPPER('".$identitystring."')";
+if($filterstring != null) {
+    $filterstring = str_replace('*', '%', $_POST['filterstring']);
+    $filter = "WHERE UPPER(figure.identity) LIKE UPPER('".$filterstring."')";
 } else
     $filter = '';
 

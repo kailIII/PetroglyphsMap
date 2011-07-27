@@ -12,9 +12,9 @@ $sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres p
 * Useful variables
 */
 $identitystring = str_replace('*', '%', $_POST['identitystring']); // on récupère le code figure demandé dans le formulaire, en remplacant * par % (pour le SQL)
+$zonenb = $_POST['zonecombo'];
 $_SESSION['identitystring'] = $identitystring;
-
-$id = $_SESSION['idconnexion']; // identifiant donné par la session php
+$id = $_POST['log'];
 
 $viewname = "rockview".$id; // nom de la vue unique qui va être créée
 $mapname = "tmp/wfs_rockview".$id.".map"; // nom du mapfile unique qui va être créé
@@ -34,14 +34,31 @@ $map->save($mapname); // sauvagarde dans le dossier /tmp
 /*
 * Postgres view
 */
-$query_view = "
-    CREATE OR REPLACE VIEW ".$viewname." AS
+$query0 = "
+    CREATE OR REPLACE VIEW ".$viewname.' AS
     SELECT rock.rock_id, rock.rock_number, rock.group_id, rock.point_x, rock.point_y, rock.point_z, rock.year, rock.geo_point, count(figure_id) nbfig
-    FROM rock, figure
-    WHERE UPPER(figure.identity) LIKE UPPER('".$identitystring."')
-    AND figure.rock_id = rock.rock_id
-    GROUP BY rock.rock_id, rock.rock_number, rock.group_id, rock.point_x, rock.point_y, rock.point_z, rock.year, rock.geo_point
-";
+    FROM zone, "group", rock, figure
+    WHERE figure.rock_id = rock.rock_id';
+
+if ($identitystring != '') {
+    $figurequery = "
+        AND UPPER(figure.identity) LIKE UPPER('".$identitystring."')";
+    
+} else {
+    $figurequery = '';   // no filter on identity
+}
+
+if ($zonenb > 0) {
+    $zonequery = '
+        AND rock.group_id = "group".group_id
+        AND "group".zone_id = zone.zone_id
+        AND zone.zone_number = '.$zonenb;
+} else {
+    $zonequery = '';    // no filter on zone
+}
+
+$query_view = $query0.$figurequery.$zonequery."
+    GROUP BY rock.rock_id, rock.rock_number, rock.group_id, rock.point_x, rock.point_y, rock.point_z, rock.year, rock.geo_point";
 pg_query($sessionpg, $query_view);
 
 /*
