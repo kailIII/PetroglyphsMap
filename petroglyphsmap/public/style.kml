@@ -1,0 +1,17 @@
+<Style id="rockstyle">
+    <LabelStyle>
+        <scale>0.7</scale>
+    </LabelStyle>
+    <BalloonStyle>
+        <text><![CDATA[
+        <p><b><font color="#CC0000">$[name]</font></b></p>
+        <p><font face="Courier">$[description]</font></p>
+        ]]></text>
+    </BalloonStyle>
+    <IconStyle>
+        <scale>0.4</scale>
+        <Icon>
+            <href>http://127.0.0.1/img/rockicon.png</href>
+        </Icon>
+    </IconStyle>
+</Style>

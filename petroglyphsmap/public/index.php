@@ -1,16 +1,12 @@
-<?php
-
-session_start ();
-
-?>
+<?php session_start (); ?>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>SIG des Merveilles</title>
         <meta http-equiv="content-Type" content="text/html; charset=iso-8859-1" />
         <meta name="content-language" content="fr" />
-        <meta name="Author" content="Gabriel Vatin - ENSG">
-        <meta name="Copyright" content="Laboratoire Départemental de Préhistoire du Lazaret">
+        <meta name="Author" content="Gabriel Vatin (2011)">
+        <meta name="Copyright" content="Laboratoire Départemental de Préhistoire du Lazaret - LPDL">
         <meta name="Description" content="SIG des roches gravées de la Vallée des Merveilles - gestion, visualisation et analyse des données">
 
         <link rel="stylesheet" type="text/css" href="css/style.css"></link>
@@ -42,12 +38,10 @@ session_start ();
         window.onbeforeunload = function(e){
             Ext.Ajax.request({
                 method: 'POST',
-                url: 'reinit.php'
+                url: 'reinit_all.php'
             });
         };
         </script>
 
     </head>
-
-    <body></body>
 <html>

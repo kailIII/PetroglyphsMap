@@ -23,7 +23,7 @@ App.layout = (function() {
      * Private
      */
     
-    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2, GoogleEarthPanel;
+    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2;
     var propSymLyr = null;
     var popup = null;
     var phpsession = document.cookie.substring(10, document.cookie.length-1);
@@ -241,12 +241,15 @@ App.layout = (function() {
         
         // define "createPopup" function
         function createPopup(feature) {
-            var popup_title, popup_html;
+            var popup_title, popup_html, win, winTitle;
             
             // description of the feature, according to its type
             if (feature.fid[0]=='z') {
                 popup_title = "Zone";
-                popup_html = "Zone "  + feature.attributes.zone_number;
+                popup_html = "Zone "  + feature.attributes.zone_number + '<br/>'
+                    + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
+                    + "<span id='pieLink' class='link'>Types des figures</span>";
+                winTitle = 'Figures - Zone ' + feature.attributes.zone_number;
             } else if (feature.fid[0]=='r') {
                 popup_title = "Roche";
                 popup_html = "Zone " + feature.attributes.zone_number + '<br/>'
@@ -256,8 +259,9 @@ App.layout = (function() {
                     + "Y : " + feature.attributes.point_y + '<br/>'
                     + "Z : " + feature.attributes.point_z + '<br/>'
                     + "Année de lever : " + feature.attributes.year + '<br/>'
-                    + "<span id='list' class='link'>Tableau des figures</span><br/>"
-                    + "<span id='list2' class='link'>Types des figures</span>";
+                    + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
+                    + "<span id='pieLink' class='link'>Types des figures</span>";
+                    winTitle = 'Figures - Roche ' + feature.attributes.rock_number;
             }
             
             popup = new GeoExt.Popup({
@@ -276,57 +280,69 @@ App.layout = (function() {
             
             popup.show();
             
+            // Create the grid containing the whole figures description
             function createGrid(result, request) {
-                var win;                
-                var jsonData = Ext.util.JSON.decode(result.responseText);
+                var jsonData = Ext.util.JSON.decode(result.responseText);   // get the response from database
+                // Fields list
+                var featFields = [
+                    {name: 'face', type: 'string'},
+                    {name: 'figure_number', type: 'string'},
+                    {name: 'identity',     type: 'string'},
+                    {name: 'alternative_identity',  type: 'string'}
+                ];
+                
+                // If feature is a zone, adding two fields to default fields
+                if (feature.fid[0] == 'z') {
+                    featFields.splice(0, 0, {name: 'group_number', type: 'integer'});
+                    featFields.splice(1, 0, {name: 'rock_number', type: 'string'});
+                }
+                
                 if (jsonData[0] == null) {
                     alert("Aucune figure n'a été référencée.");
-                } else {                
+                } else {
                     var store = new Ext.data.JsonStore ({
                         // store configs
                         autoDestroy: true,
                         storeId: 'store',
                         // reader configs
                         idIndex: 0,
-                        fields: [
-                            {name: 'face', type: 'string'},
-                            {name: 'figure_number', type: 'string'},
-                            {name: 'identity',     type: 'string'},
-                            {name: 'alternative_identity',  type: 'string'}
-                        ],
+                        fields: featFields,
                         data: jsonData
                     });
                     
-                    // create the Grid
+                    // Columns list
+                    var col = [{
+                            header: 'Face',
+                            sortable: true, 
+                            dataIndex: 'face',
+                            width: 50
+                        }, {
+                            header: 'Figure',
+                            sortable: true,
+                            dataIndex: 'figure_number',
+                            width: 70
+                        }, {
+                            header: 'Code',
+                            sortable: true, 
+                            dataIndex: 'identity',
+                            width: 150
+                        }, {
+                            header: 'Code alternatif',
+                            sortable: true,
+                            dataIndex: 'alternative_identity',
+                            width: 150
+                        }];
+                    
+                    // If feature is a zone, adding two columns to default columns
+                    if (feature.fid[0] == 'z') {
+                        col.splice(0, 0, {header: 'Groupe', sortable: true, dataIndex: 'group_number', width: 70});
+                        col.splice(1, 0, {header: 'Roche', sortable: true, dataIndex: 'rocknumber', width: 60});
+                    }
+                    
                     var grid = new Ext.grid.GridPanel ({
                         store: store,
                         stateId: 'stateGrid',
-                        columns: [
-                            {
-                                header: 'Face',
-                                sortable: true, 
-                                dataIndex: 'face',
-                                width: 50
-                            },
-                            {
-                                header: 'Figure',
-                                sortable: true,
-                                dataIndex: 'figure_number',
-                                width: 70
-                            },
-                            {
-                                header: 'Code',
-                                sortable: true, 
-                                dataIndex: 'identity',
-                                width: 150
-                            },
-                            {
-                                header: 'Code alternatif',
-                                sortable: true,
-                                dataIndex: 'alternative_identity',
-                                width: 150
-                            }
-                        ],
+                        columns: col,
                         boxMaxHeight: 400,
                         viewConfig: {
                             stripeRows: true
@@ -339,10 +355,9 @@ App.layout = (function() {
                     
                     // display the grid in a window
                     win = new Ext.Window ({
-                        title: 'Figures',
+                        title: winTitle,
                         autoWidth: true,
                         height: 400,
-                        //boxMaxHeight: 400,
                         autoScroll: true,
                         layout: 'fit',
                         x: 50,
@@ -369,6 +384,8 @@ App.layout = (function() {
                     replaceByValue(jsonData, 'type', 'H', 'Anthropomorphes');
                     replaceByValue(jsonData, 'type', 'R', 'Figures géométriques');
                     replaceByValue(jsonData, 'type', 'N', 'Non identifiées');
+                    replaceByValue(jsonData, 'type', '', 'Pas description');
+                    replaceByValue(jsonData, 'type', 'A', 'Anthropomorphes simples');
                     
                     var store = new Ext.data.JsonStore ({
                         // store configs
@@ -385,7 +402,7 @@ App.layout = (function() {
                     
                     // create the pie
                     var piePanel = new Ext.Panel({
-                        height: 300,
+                        height: 400,
                         autoWidth: true,
                         items: {
                             xtype: 'piechart',
@@ -411,7 +428,7 @@ App.layout = (function() {
                     
                     // display the pie in a window
                     win = new Ext.Window ({
-                        title: 'Diagramme des types de figures',
+                        title: winTitle,
                         width: 400,
                         autoHeight: true,
                         layout: 'fit',
@@ -423,39 +440,36 @@ App.layout = (function() {
                 }
             }
             
-            var list = document.getElementById('list');
-            list.onclick = function() {
-                // by default, checkbox is disabled
-                if (document.getElementById('checkbox') == null) {
-                    var bool = false;
-                } else {
-                    var bool = document.getElementById('checkbox').checked;
-                }
-                // get the figures from selected rock
-                Ext.Ajax.request({
-                    method: 'POST',
-                    url: 'getfigures.php',
-                    params: {
-                        rockid: (feature.fid.split('.'))[1],
-                        checkbox: bool
-                    },
-                    success: createGrid
-                });
-            };
-            
-            var list2 = document.getElementById('list2');
-            list2.onclick = function() {
+            function postPie() {
                 // get the figures from selected rock
                 Ext.Ajax.request({
                     method: 'POST',
                     url: 'pies.php',
                     params: {
-                        type: 'r',
+                        type: feature.fid[0],
                         id: (feature.fid.split('.'))[1]
                     },
                     success: createPie
                 });
-            };
+            }
+            
+            function postList() {
+                var bool = document.getElementById('checkbox').checked;
+                // get the figures from selected rock
+                Ext.Ajax.request({
+                    method: 'POST',
+                    url: 'getfigures.php',
+                    params: {
+                        type: feature.fid[0],
+                        id: (feature.fid.split('.'))[1],
+                        checkbox: bool
+                    },
+                    success: createGrid
+                });
+            }
+            
+            document.getElementById('listLink').onclick = postList;            
+            document.getElementById('pieLink').onclick = postPie;
             
         }
         
@@ -536,19 +550,23 @@ App.layout = (function() {
                             'zoneTxt',
                             'zoneNumber'
                         ],
-                        data: [['Tout', 0], ['1', 1], ['2', 2], ['3', 3], ['4', 4], ['5', 5], ['6', 6], ['7', 7], ['8', 8], ['9', 9], ['10', 10], ['11', 11], ['12', 12]]
+                        data: [['Tout', 0],
+                            ['1', 1],
+                            ['2', 2],
+                            ['3', 3],
+                            ['4', 4],
+                            ['5', 5],
+                            ['6', 6],
+                            ['7', 7],
+                            ['8', 8], 
+                            ['9', 9],
+                            ['10', 10],
+                            ['11', 11],
+                            ['12', 12]]
                     }),
                     valueField: 'zoneNumber',
                     displayField: 'zoneTxt',
                     allowBlank: false
-                }, {
-                    xtype: 'checkbox',
-                    boxLabel: 'Filtrer la description des roches',
-                    checked: false,
-                    id: 'checkbox',
-                    name: 'checkbox',
-                    value: 'checkbox',
-                    hideLabel: true
                 }, {
                     xtype: 'button',
                     text: 'Filtrer',
@@ -987,17 +1005,7 @@ App.layout = (function() {
     */
     var createLayerPanel = function() {
     
-        // Update 3d map to the actual center
-        function update3d() {
-            var cent = map.getCenter();
-            cent.transform(proj_geop, epsg4326);
-            GoogleEarthPanel.url = 'ge.html?lon=' + cent.lon + '&lat=' + cent.lat;
-            console.log(cent.lon + ' ' + cent.lat);
-            console.log(GoogleEarthPanel.el);
-            console.log('-----');
-            GoogleEarthPanel.el.update();
-        }
-        
+        // Export visible rocks to KML        
         function exportKml() {
             if (rock_lyr.visibility == false) {
                 alert("Aucune roche n'est affichée...");
@@ -1035,6 +1043,7 @@ App.layout = (function() {
             }
         }
         
+        // New definition of OpenLayers.Format.KML.write() function
         function write_2(kmlfile, features) {
             
             var kml = document.createElementNS("http://earth.google.com/kml/2.2", "kml");
@@ -1055,15 +1064,20 @@ App.layout = (function() {
             return kml;
         }
         
+        // New definition of OpenLayers.Format.XML.createPlacemarkXML() function
         function createPlacemarkXML_2(kmlfile, feature) {            
+            // Style
+            var placemarkStyle = kmlfile.createElementNS('', "styleUrl");
+            placemarkStyle.appendChild(kmlfile.createTextNode('http://127.0.0.1/style.kml#rockstyle'));
+            
             // Placemark name
             var placemarkName = kmlfile.createElementNS('', "name");
-            var name = feature.attributes.rock_number;
+            var name = 'Z' + feature.attributes.zone_number + 'G' + feature.attributes.group_number + 'R' + feature.attributes.rock_number;
             placemarkName.appendChild(kmlfile.createTextNode(name));
 
             // Placemark description
             var placemarkDesc = kmlfile.createElementNS('', "description");
-            var desc = 'Zone ' + feature.attributes.zone_number + ', Groupe ' + feature.attributes.group_number + ', Roche ' + feature.attributes.rock_number + ', Lever ' + feature.attributes.yaer;
+            var desc = 'Zone: ' + feature.attributes.zone_number + '<br/>Groupe: ' + feature.attributes.group_number + '<br/>Roche: ' + feature.attributes.rock_number+ '<br/>X: ' + feature.attributes.point_x + '<br/>Y: ' + feature.attributes.point_y + '<br/>Z: ' + feature.attributes.point_z + '<br/>Lever: ' + feature.attributes.yaer;
             placemarkDesc.appendChild(kmlfile.createTextNode(desc));
 
             // Placemark
@@ -1071,6 +1085,7 @@ App.layout = (function() {
             if(feature.fid != null) {
             placemarkNode.setAttribute("id", feature.fid);
             }
+            placemarkNode.appendChild(placemarkStyle);
             placemarkNode.appendChild(placemarkName);
             placemarkNode.appendChild(placemarkDesc);
 
@@ -1103,19 +1118,51 @@ App.layout = (function() {
                     },
                     rootVisible: false
                 }, {
-                    title: '3D',
-                    xtype: 'button',
-                    id: '3dpanel',
-                    text: 'Synchroniser la carte 3D',
-                    handler: update3d,
-                    style: 'margin-left: auto; margin-right: auto; text-align: center;'
-                }, {
-                    title: 'exportKml',
-                    xtype: 'button',
-                    id: 'exportKml',
-                    text: 'Exporter en KML',
-                    handler: exportKml,
-                    style: 'margin-left: auto; margin-right: auto; text-align: center;'
+                    title: 'Options',
+                    xtype: 'form',
+                    defaults: {
+                        autoWidth: true,
+                        autoHeight: true,
+                        layout: 'form'
+                    },
+                    frame: true,
+                    items: [{
+                        xtype: 'checkbox',
+                        boxLabel: 'Filtrer la description des roches',
+                        checked: false,
+                        id: 'checkbox',
+                        name: 'checkbox',
+                        value: 'checkbox',
+                        hideLabel: true
+                    }, {
+                        title: 'exportKml',
+                        xtype: 'button',
+                        id: 'exportKml',
+                        text: 'Exporter les roches en KML',
+                        handler: exportKml
+                    }, {
+                        xtype: 'button',
+                        text: "Imprimer",
+                        handler: function() {
+                            var printDialog = new Ext.Window({
+                                autoHeight: true,
+                                width: 350,
+                                items: [new GeoExt.PrintMapPanel({
+                                    sourceMap: Ext.getCmp('mapdiv'),
+                                    printProvider: {
+                                        capabilities: printCapabilities
+                                    }
+                                })],
+                                bbar: [{
+                                    text: "Create PDF",
+                                    handler: function() {
+                                        printDialog.items.get(0).print();
+                                    }
+                                }]
+                            });
+                            printDialog.show();
+                        }
+                    }]
                 }, {
                     title: 'Légende',
                     collapsible: true,
@@ -1173,24 +1220,6 @@ App.layout = (function() {
         }));        
         return actions;
     };
-    
-    var addGoogleEarthPanel = function() {
-        
-        panel_frame = Ext.extend (Ext.Panel, {
-            onRender: function(ct, position) {
-                this.el = ct.createChild({tag: 'iframe', id: 'iframe-'+ this.id, frameBorder: 0, src: this.url});
-            }
-        });
-        
-        var panel = new panel_frame({
-            id: "googleearthpanel",
-            url: 'ge.html?lon=' + center_lon + '&lat=' + center_lat,
-            style: 'width: 100%; height: 100%;',
-            layout: 'fit'
-        });
-        
-        return panel;
-    };
 
     /*
     * Public
@@ -1222,13 +1251,12 @@ App.layout = (function() {
                 },
                 items: [{
                     title: 'A propos',
-                    html: "&copy;Gabriel Vatin - ENSG 2011"                    
+                    html: "<p>&copy;Gabriel Vatin - LDPL</p><p>AGPL <a href='http://www.gnu.org/licenses/agpl.html'>(?)</a></p>"
                 }, {
                     title: 'Documentation',
                     html: "<a href='http://www.google.com'>Guide d'utilisation</a><br/><a href='http://www.ensg.eu'>Documentation technique</a>"
                 }]
             });
-            GoogleEarthPanel = addGoogleEarthPanel();
 
             // General Viewport of MapFish application
             new Ext.Viewport({
@@ -1256,13 +1284,6 @@ App.layout = (function() {
                     xtype: 'tabpanel',
                     activeTab: 0,
                     items: [layerPanel, filterform, carto, footer]
-                }, {
-                    region: 'east',
-                    title: 'Google Earth',
-                    width: '40%',
-                    collapsible: true,
-                    items: [GoogleEarthPanel],
-                    hidden: true
                 }]
             });
         }

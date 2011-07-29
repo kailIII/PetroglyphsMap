@@ -17,7 +17,7 @@ $id = $_POST['id'];
 /*
 * Postgres query
 */
-if ($type == 'r') { // zone analysis
+if ($type == 'r') { // rock analysis
     $query = '
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
         FROM figure, rock
@@ -25,16 +25,15 @@ if ($type == 'r') { // zone analysis
         AND rock.rock_id = '.$id.'
         GROUP BY type
         ORDER BY type';
-} elseif ($type == 'z') {   // rock analysis
+} elseif ($type == 'z') {   // zone analysis
     $query = '
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
-        FROM figure, rock, "group", zone
+        FROM figure, rock, "group"
         WHERE figure.rock_id = rock.rock_id
         AND rock.group_id = "group".group_id
-        AND "group".zone_id = zone.zone_id
-        AND zone.zone_number = '.$id.'
+        AND "group".zone_id = '.$id.'
         GROUP BY type
-        ORDER BY type';
+        ORDER BY count';
 }
 
 $result = pg_query($sessionpg, $query);
