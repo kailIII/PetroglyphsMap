@@ -22,5 +22,16 @@ def make_map(config):
 
     map.connect('/{controller}/{action}')
     map.connect('/{controller}/{action}/{id}')
+    map.connect('mapping1', '/administration', controller='administration', action='index')
+    map.connect('mapping2', '/administration/addrock', controller='administration', action='addrock')
+    map.connect('mapping3', '/administration/addfigure', controller='administration', action='addfigure')
+    map.connect('mapping4', '/administration/updatecoordinates', controller='administration', action='updatecoordinates')
+    
+    map.connect('mapping5', '/administration/addrockquery',
+        controller='administration', action='addrockquery')
+    map.connect('mapping6', '/administration/addfigurequery',
+        controller='administration', action='addfigurequery')
+    map.connect('mapping7', '/administration/updatecoordinatesquery',
+        controller='fadministration', action='updatecoordinatesquery')
 
     return map

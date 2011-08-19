@@ -1,0 +1,52 @@
+<html>
+<head>
+<title>Nouvelle roche</title>
+<style type="text/css">
+fieldset {
+    display: block;
+    width: 400px;
+    height: 250px;
+}
+</style>
+</head>
+<body>
+<form name="addrockform" action="/admin/addrock.php" method="POST">
+    <h1>Nouvelle roche</h1>
+
+
+    <fieldset style='float: left;'>
+        <legend>Référencement</legend>
+        <p>Rock number:
+        <input type="text" name="rocknumber" />
+        </p>
+        <p>Group number:
+        <input type="text" name="groupnumber" />
+        </p>                                  
+        <p>Zone number:                       
+        <input type="text" name="zonenumber" />
+        </p>
+    </fieldset>
+
+    <fieldset>
+        <legend>Coordonnées</legend>
+        <p>Système de projection pour les coordonnées à rentrer : Lambert 93.</p>
+        <p>X:                       
+        <input type="text" name="x" />
+        </p>
+        <p>Y:                       
+        <input type="text" name="y" />
+        </p>
+        <p>Z:                       
+        <input type="text" name="z" />
+        </p>
+        <p>Year:                       
+        <input type="text" name="year" />
+        </p>
+    </fieldset>
+
+
+    <input type="submit" name="submit" value="Enregistrer" />
+</form>
+
+</body>
+</html>

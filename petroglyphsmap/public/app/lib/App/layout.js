@@ -1240,7 +1240,7 @@ App.layout = (function() {
             var carto = createCarto();
             var layerPanel = createLayerPanel();
             var footer = new Ext.Panel({
-                title: 'A propos',
+                title: 'En plus',
                 frame: true,
                 defaults: {
                     autoHeight: true,
@@ -1255,6 +1255,9 @@ App.layout = (function() {
                 }, {
                     title: 'Documentation',
                     html: "<a href='http://www.google.com'>Guide d'utilisation</a><br/><a href='http://www.ensg.eu'>Documentation technique</a>"
+                }, {
+                    title: 'Administration de la base géographique',
+                    html: "<a href='/admin'>Index</a>"
                 }]
             });
 
