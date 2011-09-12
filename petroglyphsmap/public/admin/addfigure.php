@@ -23,6 +23,7 @@ $query0 = 'SELECT figure.figure_id
     
 $result = pg_query($sessionpg, $query0);
 
+// Adding the figure to the database
 if (!pg_fetch_row($result)) {
     $query = "INSERT INTO figure (figure_number, rock_id, identity, alternative_identity, face) VALUES (
         '".$_POST['figurenumber']."', ".
@@ -42,5 +43,8 @@ if (!pg_fetch_row($result)) {
     echo "Cette figure existe déjà sur la base de données.\n";
     exit;
 }
+
+// Adding picture on the network
+include 'upload.php';
 
 ?>

@@ -2,6 +2,8 @@
 
 session_start ();
 
+$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
+
 /*
 * Initialize SQL query
 */
@@ -33,7 +35,7 @@ if ($scale == 'Zone') {
     /*
     * New temporary Mapfile, specific to the filter
     */
-    $map = ms_newMapObj("wfs_zonestats.map"); // WFS reference mapfile, to create the view mapfile
+    $map = ms_newMapObj($map_path."wfs_zonestats.map"); // WFS reference mapfile, to create the view mapfile
     $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // modifying the url value
     $zones = $map->getLayerByName("zones"); // modifying the 'zones' layer
     $zones->set('data', 'geo_centroid FROM (select zone_id, zone_number, geo_centroid, nb from '.$viewname.') as subquery using unique zone_id using srid=2154');
@@ -82,7 +84,7 @@ if ($scale == 'Zone') {
     /*
     * New temporary Mapfile, specific to the filter
     */
-    $map = ms_newMapObj("wfs_rockstats.map"); // WFS reference mapfile, to create the view mapfile
+    $map = ms_newMapObj($map_path."wfs_rockstats.map"); // WFS reference mapfile, to create the view mapfile
     $map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // modifying the url value
     $rocks = $map->getLayerByName("rocks"); // modifying the 'rocks' layer
     $rocks->set('data', 'geo_point FROM (select rock_id, rock_number, geo_point, nb from '.$viewname.') as subquery using unique rock_id using srid=2154');

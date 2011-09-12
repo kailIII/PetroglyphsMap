@@ -1,40 +1,26 @@
 <html>
 
 <head>
-    <title>Nouvelle figure</title>
+    <title>Ajouter un plan de roche</title>
     <script src="../lib/jquery-1.6.2.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <form name="addfigureform" action="/admin/addfigure.php" method="POST">
-        <h1>Nouvelle figure</h1>
+    <form name="addfigureform" enctype="multipart/form-data" action="/admin/upload.php" method="POST">
+        <h1>Ajouter un plan de roche</h1>
         
         <fieldset style='float: left;'>
-            <legend>Référencement</legend>
             <p>Zone number:
             <select type="text" name="zonenumber" id="zonenumber"></select></p>
             <p>Group number:
             <select type="text" name="groupnumber" id="groupnumber"></select></p>
             <p>Rock number:
             <select type="text" name="rocknumber" id="rocknumber"></select></p>
-            <p>Face:
-            <input type="text" name="face" /></p>
-            <p>Figure number:
-            <input type="text" name="figurenumber" /></p>
-        </fieldset>
-
-        <fieldset>
-            <legend>Description</legend>
-            <p>Identity:
-            <input type="text" name="identity" /></p>
-            <p>Alternative identity (optionel):
-            <input type="text" name="altidentity" /></p>
-            <p>Image (optionel):
+            <p>Image :
             <input type="file" name="fichier" size="30"></p>
+            <input type="submit" name="submit" value="Enregistrer" />
         </fieldset>
-        
-        <input type="submit" name="submit" value="Enregistrer" />
     </form>
 
     <script>
@@ -80,19 +66,6 @@
                 );
             }
         );
-
-        $(".numericfield").blur(function(){
-            var name=($(this).attr("name"));
-            var value=($(this).attr("value"));
-            var info_form=$(this).next(".info");
-            if(value == undefined) {
-                info_form.append("Obligatoire");
-            } else if(value != parseFloat(value)) {
-                info_form.append("Mauvais format !");
-            } else {
-               info_form.html('');
-            }
-        });
     </script>
 </body>
 

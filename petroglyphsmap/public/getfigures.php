@@ -24,18 +24,22 @@ else // else nothing is filtered
 
 if ($type == 'r') {   // rock analysis
     $query = "
-        SELECT figure_number, face, identity, alternative_identity
-        FROM figure
-        WHERE figure.rock_id = ".$id.$filter."
-        ORDER BY face, figure_number";
+        SELECT figure_number, face, identity, alternative_identity, 'http://127.0.0.1/photos/Z' || zone_number || '/G' || group_number || '/R' || rock_number || '/Fig' || figure_number || '.jpg' AS image".'
+        FROM zone, "group", rock, figure
+        WHERE figure.rock_id = '.$id.'
+        AND rock.rock_id = '.$id.'
+        AND rock.group_id = "group".group_id
+        AND "group".zone_id = zone.zone_id'.$filter.'
+        ORDER BY face, figure_number';
 } elseif ($type == 'z') {   // zone analysis
-    $query = '
-        SELECT group_number, rock_number, figure_number, face, identity, alternative_identity
-        FROM "group", rock, figure
+    $query = "
+        SELECT group_number, rock_number, figure_number, face, identity, alternative_identity, 'http://127.0.0.1/photos/Z' || zone_number || '/G' || group_number || '/R' || rock_number || '/Fig' || figure_number || '.jpg' AS image".'
+        FROM zone, "group", rock, figure
         WHERE figure.rock_id = rock.rock_id
         AND rock.group_id = "group".group_id
-        AND "group".zone_id = '.$id.$filter."
-        ORDER BY group_number, rock_number, face, figure_number";
+        AND "group".zone_id = '.$id.'
+        AND zone.zone_id = '.$id.$filter.'
+        ORDER BY group_number, rock_number, face, figure_number';
 
 }
 

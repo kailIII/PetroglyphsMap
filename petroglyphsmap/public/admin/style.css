@@ -1,0 +1,61 @@
+/*
+*  Menu style
+*/
+
+#ban {
+    margin-left: auto;
+    margin-right: auto;
+    width: 419px;
+}
+
+#list {
+    margin-left: auto;
+    margin-right: auto;
+    width: 1100px;
+}
+
+ul.horizontal {
+    list-style-type:circle;
+}
+
+ul.horizontal li {
+    display: block;
+    float: left;
+    width: 200px;
+    height: 25px;
+    text-align: center;
+    background: url(/img/bouton_off.png);
+}
+
+ul.horizontal li a {
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+}
+
+ul.horizontal li a:hover{
+    font-weight: bold;
+    text-decoration: none;
+    color: white;
+    display: block;
+    float: left;
+    width: 200px;
+    height: 25px;
+    text-align: center;
+    background: url(/img/bouton_on.png);
+}
+
+/*
+*  Form style
+*/
+
+fieldset {
+    display: block;
+    width: 400px;
+    height: 250px;
+}
+
+span.info {
+    color: red;
+    font-weight: bold;
+}

@@ -1,52 +1,84 @@
 <html>
+
 <head>
-<title>Nouvelle roche</title>
-<style type="text/css">
-fieldset {
-    display: block;
-    width: 400px;
-    height: 250px;
-}
-</style>
+    <title>Nouvelle roche</title>
+    <script src="../lib/jquery-1.6.2.min.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<form name="addrockform" action="/admin/addrock.php" method="POST">
-    <h1>Nouvelle roche</h1>
+    <form name="addrockform" action="/admin/addrock.php" method="POST">
+        <h1>Nouvelle roche</h1>
 
 
-    <fieldset style='float: left;'>
-        <legend>Référencement</legend>
-        <p>Rock number:
-        <input type="text" name="rocknumber" />
-        </p>
-        <p>Group number:
-        <input type="text" name="groupnumber" />
-        </p>                                  
-        <p>Zone number:                       
-        <input type="text" name="zonenumber" />
-        </p>
-    </fieldset>
+        <fieldset style='float: left;'>
+            <legend>Référencement</legend>
+            <p>Zone number:
+            <select type="text" name="zonenumber" id="zonenumber"></select></p>
+            <p>Group number:
+            <select type="text" name="groupnumber" id="groupnumber"></select></p>
+            <p>Rock number:
+            <input type="text" name="rocknumber" /></p>
+        </fieldset>
 
-    <fieldset>
-        <legend>Coordonnées</legend>
-        <p>Système de projection pour les coordonnées à rentrer : Lambert 93.</p>
-        <p>X:                       
-        <input type="text" name="x" />
-        </p>
-        <p>Y:                       
-        <input type="text" name="y" />
-        </p>
-        <p>Z:                       
-        <input type="text" name="z" />
-        </p>
-        <p>Year:                       
-        <input type="text" name="year" />
-        </p>
-    </fieldset>
+        <fieldset>
+            <legend>Coordonnées</legend>
+            <p>Système de projection pour les coordonnées à rentrer : Lambert 93.</p>
+            <p>X:
+            <input class="numericfield" type="text" name="x" /><span class="info"></span></p>
+            <p>Y:
+            <input class="numericfield" type="text" name="y" /><span class="info"></span></p>
+            <p>Z:
+            <input class="numericfield" type="text" name="z" /><span class="info"></span></p>
+            <p>Year:
+            <input class="numericfield" type="text" name="year" /><span class="info"></span></p>
+        </fieldset>
 
 
-    <input type="submit" name="submit" value="Enregistrer" />
-</form>
+        <input type="submit" name="submit" value="Enregistrer" />
+    </form>
 
+    <script>
+        $.getJSON(
+            'getZones.php',
+            function (data){
+                var options = '<option>----</option>';
+                for (var i = 0; i < data.length; i++) {
+                    options += '<option value="' + data[i].zone_id + '">' + data[i].zone_number + '</option>';
+                }
+                $("#zonenumber").html(options);
+            }
+        );
+
+        $("#zonenumber").change(
+            function() {
+                $.getJSON(
+                    'getGroups.php?',
+                    {zoneid: $(this).val()},
+                    function (data){
+                        var options = '<option>----</option>';
+                        for (var i = 0; i < data.length; i++) {
+                            options += '<option value="' + data[i].group_id + '">' + data[i].group_number + '</option>';
+                        }
+                        $("#groupnumber").html(options);
+                    }
+                );
+            }
+        );
+
+        $(".numericfield").blur(function(){
+            var name=($(this).attr("name"));
+            var value=($(this).attr("value"));
+            var info_form=$(this).next(".info");
+            if(value == undefined) {
+                info_form.append("Obligatoire");
+            } else if(value != parseFloat(value)) {
+                info_form.append("Mauvais format !");
+            } else {
+               info_form.html('');
+            }
+        });
+    </script>
 </body>
+
 </html>

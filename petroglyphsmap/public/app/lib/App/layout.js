@@ -23,10 +23,11 @@ App.layout = (function() {
      * Private
      */
     
-    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2;
+    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2, styleMap_rock, styleMap_rock_label, picSpan;
     var propSymLyr = null;
     var popup = null;
     var phpsession = document.cookie.substring(10, document.cookie.length-1);
+    var mappath = 'C:\\ms4w\\Apache\\htdocs\\';
     
     var epsg4326 = new OpenLayers.Projection("EPSG:4326");
     var lambert93 = new OpenLayers.Projection("EPSG:2154");
@@ -89,10 +90,10 @@ App.layout = (function() {
         );
         
         // WFS and WMS
-        myWFS = 'http://127.0.0.1:80/cgi-bin/mapserv.exe?map=C:\\ms4w\\Apache\\htdocs\\wfs.map&';
+        myWFS = 'http://127.0.0.1:80/cgi-bin/mapserv.exe?map=' + mappath + 'wfs.map&';
         
         // Rocks stylemp
-        var styleMap_rock = new OpenLayers.StyleMap({
+        styleMap_rock = new OpenLayers.StyleMap({
             pointRadius: 4,
             fillColor: "blue",
             fillOpacity: 0.4,
@@ -100,13 +101,18 @@ App.layout = (function() {
             strokeColor: "blue"
         });
         
-        // Figures stylemap
-        var styleMap_fig = new OpenLayers.StyleMap({
-            pointRadius: 2,
-            fillColor: "yellow",
-            fillOpacity: 0.2,
-            strokeWidth: 0.3,
-            strokeColor: "yellow"
+        styleMap_rock_label = new OpenLayers.StyleMap({
+            pointRadius: 4,
+            fillColor: "blue",
+            fillOpacity: 0.4,
+            strokeWidth: 0.5,
+            strokeColor: "blue",
+            label : "${rock_number}",
+            fontColor: "white",
+            fontSize: "12px",
+            fontFamily: "Courier New, monospace",
+            fontWeight: "bold",
+            labelAlign: "rb"
         });
         
         //
@@ -241,29 +247,35 @@ App.layout = (function() {
         
         // define "createPopup" function
         function createPopup(feature) {
-            var popup_title, popup_html, win, winTitle;
+            var popup_title, popup_html, win, winTitle, picwin;
+            var z = feature.attributes.zone_number;
+            var g = feature.attributes.group_number;
+            var r = feature.attributes.rock_number;
+            var path = 'http://127.0.0.1/photos/Z' + z + '/G' + g + '/R' + r + '.jpg';
             
             // description of the feature, according to its type
             if (feature.fid[0]=='z') {
                 popup_title = "Zone";
-                popup_html = "Zone "  + feature.attributes.zone_number + '<br/>'
+                popup_html = "Zone "  + z + '<br/>'
                     + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
                     + "<span id='pieLink' class='link'>Types des figures</span>";
-                winTitle = 'Figures - Zone ' + feature.attributes.zone_number;
+                winTitle = 'Figures - Zone ' + z;
             } else if (feature.fid[0]=='r') {
                 popup_title = "Roche";
-                popup_html = "Zone " + feature.attributes.zone_number + '<br/>'
-                    + "Groupe " + feature.attributes.group_number + '<br/>'
-                    + "Roche " + feature.attributes.rock_number + '<br/>'
+                popup_html = "Zone " + z + '<br/>'
+                    + "Groupe " + g + '<br/>'
+                    + "Roche " + r + '<br/>'
                     + "X : " + feature.attributes.point_x + '<br/>'
                     + "Y : " + feature.attributes.point_y + '<br/>'
                     + "Z : " + feature.attributes.point_z + '<br/>'
                     + "Année de lever : " + feature.attributes.year + '<br/>'
                     + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
-                    + "<span id='pieLink' class='link'>Types des figures</span>";
-                    winTitle = 'Figures - Roche ' + feature.attributes.rock_number;
+                    + "<span id='pieLink' class='link'>Types des figures</span><br/>"
+                    + "<span id='pictureSpan' class='link'><a href='" + path + "'>Plan de roche</a></span>";
+                winTitle = 'Figures - Roche ' + feature.attributes.rock_number;
             }
             
+            // Rock popup
             popup = new GeoExt.Popup({
                 title: popup_title,
                 location: feature,
@@ -280,6 +292,20 @@ App.layout = (function() {
             
             popup.show();
             
+            // Rock tooltip
+            var tt = new Ext.ToolTip({
+                target: 'pictureSpan',
+                html: "<img src='" + path + "' width=400 />",
+                autoHeight: true,
+                width: 400
+            });
+            
+            // Figure tooltip
+            function addTooltip(value, metadata, record, rowIndex, colIndex, store){
+                metadata.attr = 'ext:qtip="<img src='+"'"+value+"'"+' height=400 />"';
+                return value;
+            }
+            
             // Create the grid containing the whole figures description
             function createGrid(result, request) {
                 var jsonData = Ext.util.JSON.decode(result.responseText);   // get the response from database
@@ -287,8 +313,9 @@ App.layout = (function() {
                 var featFields = [
                     {name: 'face', type: 'string'},
                     {name: 'figure_number', type: 'string'},
-                    {name: 'identity',     type: 'string'},
-                    {name: 'alternative_identity',  type: 'string'}
+                    {name: 'identity', type: 'string'},
+                    {name: 'alternative_identity', type: 'string'},
+                    {name: 'image', type: 'string'}
                 ];
                 
                 // If feature is a zone, adding two fields to default fields
@@ -331,12 +358,18 @@ App.layout = (function() {
                             sortable: true,
                             dataIndex: 'alternative_identity',
                             width: 150
-                        }];
+                        }, {
+                            header: 'Image',
+                            sortable: false,
+                            dataIndex: 'image',
+                            width: 150,
+                            renderer: addTooltip
+                    }];
                     
                     // If feature is a zone, adding two columns to default columns
                     if (feature.fid[0] == 'z') {
                         col.splice(0, 0, {header: 'Groupe', sortable: true, dataIndex: 'group_number', width: 70});
-                        col.splice(1, 0, {header: 'Roche', sortable: true, dataIndex: 'rocknumber', width: 60});
+                        col.splice(1, 0, {header: 'Roche', sortable: true, dataIndex: 'rock_number', width: 60});
                     }
                     
                     var grid = new Ext.grid.GridPanel ({
@@ -454,7 +487,7 @@ App.layout = (function() {
             }
             
             function postList() {
-                var bool = document.getElementById('checkbox').checked;
+                var bool = document.getElementById('checkbox_filter').checked;
                 // get the figures from selected rock
                 Ext.Ajax.request({
                     method: 'POST',
@@ -541,7 +574,7 @@ App.layout = (function() {
                     editable: false,
                     triggerAction: 'all',
                     mode: 'local',
-                    value: 0,
+                    value: 999,
                     store: new Ext.data.ArrayStore({
                         id: 'zonestore',
                         autoLoad: false,
@@ -550,7 +583,8 @@ App.layout = (function() {
                             'zoneTxt',
                             'zoneNumber'
                         ],
-                        data: [['Tout', 0],
+                        data: [['Tout', 999],
+                            ['0', 0],
                             ['1', 1],
                             ['2', 2],
                             ['3', 3],
@@ -592,14 +626,20 @@ App.layout = (function() {
         
         function displayFilter(result, action) {
             var filtertxt = document.getElementById('identitystring').value;
-            var zonetxt = 'Z' + document.getElementById('zonecombo').value;
-            
+            var zonetxt = document.getElementById('zonecombo').value;
+            if (filtertxt != '' && zonetxt != 'Tout') {
+                var filterstring = filtertxt + ' & Z' + zonetxt;
+            } else if (filtertxt != '') {
+                var filterstring = filtertxt;
+            } else {
+                var filterstring = 'Z' + zonetxt;
+            }
             var obj = Ext.util.JSON.decode(action.response.responseText); // response object with the mapfile path for WFS
-            rock_lyr.url = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=C:\\ms4w\\Apache\\htdocs\\" + obj.mapfile + "&";
+            rock_lyr.url = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=" + mappath + obj.mapfile + "&";
             rock_lyr.setVisibility(true); // display the map
             document.getElementById('formstatus').innerHTML = 'Filtre activé'; // status update
             document.getElementById('formstatus').className = 'filter-on';
-            document.getElementById('rockstatus').innerHTML = '<img src="img/filter.png" alt="Filtre ' + filtertxt + zonetxt + '" title="Filtre ' + filtertxt + zonetxt + '"/>';
+            document.getElementById('rockstatus').innerHTML = '<img src="img/filter.png" alt="' + filterstring + '" title="' + filterstring + '"/>';
         }
         
         // Function to create a DB view from Rock table and display it on the map
@@ -617,7 +657,7 @@ App.layout = (function() {
                 },
                 reset: false,
                 failure: function(result, action) {
-                    alert('Erreur');
+                    alert('Erreur : vérifier les champs...');
                 },
                 success: displayFilter
             });
@@ -829,7 +869,7 @@ App.layout = (function() {
         // Add a layer of proportional circles, based on JSON response
         function addpropSymbols(result, action) {
             var obj = Ext.util.JSON.decode(action.response.responseText);
-            var myUrl = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=C:\\ms4w\\Apache\\htdocs\\" + obj.mapfile + "&";
+            var myUrl = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=" + mappath + obj.mapfile + "&";
             var minsize = Ext.getCmp('minsize').getValue();
             var maxsize = Ext.getCmp('maxsize').getValue();
             
@@ -837,14 +877,14 @@ App.layout = (function() {
             var symbol = new Geometry('circle', minsize, maxsize, obj.min, obj.max);
             
             // Specify the size of the circles to draw
-            var context = {
+            var context_circle = {
                 getSize: function(feature) {
                     return symbol.getSize(feature.attributes["nb"]);
                 }
             };
             
             // Template for styling the proportional circles
-            var template = {
+            var template_circle = {
                 fillOpacity: 0.9,
                 strokeColor: "#555555",
                 strokeWidth: 1,
@@ -852,8 +892,8 @@ App.layout = (function() {
                 fillColor: "#fae318"
             };
 
-            var style = new OpenLayers.Style(template, {context: context});
-            var styleMap = new OpenLayers.StyleMap({'default': style, 'select': {fillColor: '#ff6300'}});
+            var style_circle = new OpenLayers.Style(template_circle, {context: context_circle});
+            var styleMap_circle = new OpenLayers.StyleMap({'default': style_circle, 'select': {fillColor: '#ff6300'}});
             
             // Define the new layer
             propSymLyr = new OpenLayers.Layer.WFS(
@@ -865,7 +905,7 @@ App.layout = (function() {
                     visibility: true,
                     projection: lambert93,
                     extractAttributes: true,
-                    styleMap: styleMap
+                    styleMap: styleMap_circle
                 }
             );
             map.addLayer(propSymLyr);
@@ -990,7 +1030,6 @@ App.layout = (function() {
                     return Math.pow(value, b) * a;
                 }
             }
-
         }
         
         return carto;
@@ -1130,38 +1169,33 @@ App.layout = (function() {
                         xtype: 'checkbox',
                         boxLabel: 'Filtrer la description des roches',
                         checked: false,
-                        id: 'checkbox',
-                        name: 'checkbox',
+                        id: 'checkbox_filter',
+                        name: 'checkbox_filter',
                         value: 'checkbox',
                         hideLabel: true
+                    }, {
+                        xtype: 'checkbox',
+                        boxLabel: 'Afficher le numéro des roches',
+                        checked: false,
+                        id: 'checkbox_label',
+                        name: 'checkbox_label',
+                        value: 'checkbox',
+                        hideLabel: true,
+                        handler: function(checkbox, checked) {
+                            if (checked) {
+                                rock_lyr.styleMap = styleMap_rock_label;
+                                rock_lyr.redraw();
+                            } else {
+                                rock_lyr.styleMap = styleMap_rock;
+                                rock_lyr.redraw();
+                            }
+                        }
                     }, {
                         title: 'exportKml',
                         xtype: 'button',
                         id: 'exportKml',
                         text: 'Exporter les roches en KML',
                         handler: exportKml
-                    }, {
-                        xtype: 'button',
-                        text: "Imprimer",
-                        handler: function() {
-                            var printDialog = new Ext.Window({
-                                autoHeight: true,
-                                width: 350,
-                                items: [new GeoExt.PrintMapPanel({
-                                    sourceMap: Ext.getCmp('mapdiv'),
-                                    printProvider: {
-                                        capabilities: printCapabilities
-                                    }
-                                })],
-                                bbar: [{
-                                    text: "Create PDF",
-                                    handler: function() {
-                                        printDialog.items.get(0).print();
-                                    }
-                                }]
-                            });
-                            printDialog.show();
-                        }
                     }]
                 }, {
                     title: 'Légende',
@@ -1170,6 +1204,13 @@ App.layout = (function() {
                     html: '<canvas id="canvas"></canvas><div id="legendtitle"></div>',
                     bodyStyle: 'margin-left: auto; margin-right: auto; text-align: center;',
                     hidden: true
+                }, {
+                    title: 'Aide',
+                    collapsible: true,
+                    collapsed: true,
+                    frame: true,
+                    html: "<p><i>Roches / Zones</i> : données vecteur à afficher.</p><p><i>Cartes IGN / Ortho IGN</i> : fond de carte.</p><p><i>Filtrer la description des roches</i> : dans la liste des figures des zones ou roches, n'afficher que les figures correspondant au filtre appliqué.</p><p><i>Afficher le numéro des roches</i> : activer les labels sur les roches.</p><p><i>Exporter les roches en KML</i> : créer un fichier pour Google Earth, avec toutes les roches affichées sur la carte.</p>",
+                    cls: 'help-box'
                 }]
         });
         

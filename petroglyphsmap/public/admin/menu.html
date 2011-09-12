@@ -1,59 +1,21 @@
 <html>
+
 <head>
-<title>Administration</title>
-<style type="text/css">
-#ban {
-    margin-left: auto;
-    margin-right: auto;
-    width: 419px;
-}
-
-#list {
-    margin-left: auto;
-    margin-right: auto;
-    width: 700px;
-}
-
-ul.horizontal {
-    list-style-type:circle;
-}
-
-ul.horizontal li {
-    display: block;
-    float: left;
-    width: 200px;
-    height: 25px;
-    text-align: center;
-    background: url(/img/bouton_off.png);
-}
-
-ul.horizontal li a {
-    font-weight: bold;
-    color: white;
-    text-decoration: none;
-}
-
-ul.horizontal li a:hover{
-    font-weight: bold;
-    text-decoration: none;
-    color: white;
-    display: block;
-    float: left;
-    width: 200px;
-    height: 25px;
-    text-align: center;
-    background: url(/img/bouton_on.png);
-}
-</style>
+    <title>Administration</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <div id='ban'><img src='/img/logo_bego.png' /></div>
+    <div id='ban'><img src='/img/logo_bego.png' alt='Bego' title='Administration base géographique' /></div>
     <div id='list'>
         <ul class="horizontal">
             <li><a href='/admin/addrock.html' target='page'>Nouvelle roche</a></li>
             <li><a href='/admin/addfigure.html' target='page'>Nouvelle figure</a></li>
             <li><a href='/admin/updatecoordinates.html' target='page'>Mise à jour des coordonnées</a></li>
+            <li><a href='/admin/addrockpic.html' target='page'>Ajouter un plan de roche</a></li>
+            <li><a href='/admin/addfigpic.html' target='page'>Ajouter un plan de figure</a></li>
         </ul>
     </div>
 </body>
+
 </html>

@@ -13,6 +13,11 @@ div#mapDiv {
     font-weight: bold;
 }
 
+.link a {
+    text-decoration: none;
+    color: white;
+}
+
 .banner-theme{
     background: transparent url(../img/banner.jpg) repeat-x scroll 0 0;
 }

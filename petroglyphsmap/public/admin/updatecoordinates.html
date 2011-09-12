@@ -1,50 +1,116 @@
 <html>
-<head>
-<title>Mise à jour des coordonnées</title>
-<style type="text/css">
-fieldset {
-    display: block;
-    width: 400px;
-    height: 250px;
-}
-</style>
-</head>
-<body>
-<form name="updatecoordinateskform" action="/admin/updatecoordinates.php" method="POST">
-    <h1>Mise à jour des coordonnées</h1>
-    
-    <fieldset style='float: left;'>
-        <legend>Référencement</legend>
-        <p>Rock number:
-        <input type="text" name="rocknumber" />
-        </p>
-        <p>Group number:
-        <input type="text" name="groupnumber" />
-        </p>
-        <p>Zone number:
-        <input type="text" name="zonenumber" />
-        </p>
-    </fieldset>
-    
-    <fieldset>
-        <legend>Coordonnées</legend>
-        <p>Système de projection pour les coordonnées à rentrer : Lambert 93.</p>
-        <p>X:
-        <input type="text" name="x" />
-        </p>
-        <p>Y:
-        <input type="text" name="y" />
-        </p>
-        <p>Z:
-        <input type="text" name="z" />
-        </p>
-        <p>Year:
-        <input type="text" name="year" />
-        </p>
-    </fieldset>
-    
-    <input type="submit" name="submit" value="Enregistrer" />
-</form>
 
+<head>
+    <title>Mise à jour des coordonnées</title>
+    <script src="../lib/jquery-1.6.2.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <form name="updatecoordinateskform" action="/admin/updatecoordinates.php" method="POST">
+        <h1>Mise à jour des coordonnées</h1>
+        
+        <fieldset style='float: left;'>
+            <legend>Référencement</legend>
+            <p>Zone number:
+            <select type="text" name="zonenumber" id="zonenumber">
+            </select></p>
+            <p>Group number:
+            <select type="text" name="groupnumber" id="groupnumber"></select></p>
+            <p>Rock number:
+            <select type="text" name="rocknumber" id="rocknumber"></select></p>
+            <p>Current data:<div id='datarock'></div></p>
+        </fieldset>
+        
+        <fieldset>
+            <legend>Coordonnées</legend>
+            <p>Système de projection pour les coordonnées à rentrer : Lambert 93.</p>
+            <p>X:
+            <input class="numericfield" type="text" name="x" /><span class="info"></span></p>
+            <p>Y:
+            <input class="numericfield" type="text" name="y" /><span class="info"></span></p>
+            <p>Z:
+            <input class="numericfield" type="text" name="z" /><span class="info"></span></p>
+            <p>Year:
+            <input class="numericfield" type="text" name="year" /><span class="info"></span></p>
+        </fieldset>
+        
+        <input type="submit" name="submit" value="Enregistrer" />
+    </form>
+
+    <script>
+        $.getJSON(
+            'getZones.php',
+            function (data){
+                var options = '<option>----</option>';
+                for (var i = 0; i < data.length; i++) {
+                    options += '<option value="' + data[i].zone_id + '">' + data[i].zone_number + '</option>';
+                }
+                $("#zonenumber").html(options);
+            }
+        );
+
+        $("#zonenumber").change(
+            function() {
+                $.getJSON(
+                    'getGroups.php?',
+                    {zoneid: $(this).val()},
+                    function (data){
+                        var options = '<option>----</option>';
+                        for (var i = 0; i < data.length; i++) {
+                            options += '<option value="' + data[i].group_id + '">' + data[i].group_number + '</option>';
+                        }
+                        $("#groupnumber").html(options);
+                    }
+                );
+            }
+        );
+
+        $("#groupnumber").change(
+            function() {
+                $.getJSON(
+                    'getRocks.php?',
+                    {groupid: $(this).val()},
+                    function (data){
+                        var options = '<option>----</option>';
+                        for (var i = 0; i < data.length; i++) {
+                            options += '<option value="' + data[i].rock_id + '">' + data[i].rock_number + '</option>';
+                        }
+                        $("#rocknumber").html(options);
+                    }
+                );
+            }
+        );
+
+        $("#rocknumber").change(
+            function() {
+                $.getJSON(
+                    'getRocksdata.php?',
+                    {rockid: $(this).val()},
+                    function (data){
+                        var htmlTxt = '<table border="1"><tr><td>X: ' + data[0].point_x + '</td>' +
+                            '<td>Y: ' + data[0].point_y + '</td>' +
+                            '<td>Z: ' + data[0].point_z + '</td></tr>' +
+                            '<tr><td>year: ' + data[0].year + '</td></tr></table>';
+                        $("#datarock").html(htmlTxt);
+                    }
+                );
+            }
+        );
+
+        $(".numericfield").blur(function(){
+            var name=($(this).attr("name"));
+            var value=($(this).attr("value"));
+            var info_form=$(this).next(".info");
+            if(value == undefined) {
+                info_form.append("Obligatoire");
+            } else if(value != parseFloat(value)) {
+                info_form.append("Mauvais format !");
+            } else {
+               info_form.html('');
+            }
+        }); 
+    </script>
 </body>
+
 </html>
