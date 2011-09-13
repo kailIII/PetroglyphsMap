@@ -138,7 +138,7 @@ App.layout = (function() {
         
         // IGN Scan25 WMS
         var scans =  new Geoportal.Layer.WMSC(
-            'Cartes IGN',
+            'Carte IGN',
             gGEOPORTALRIGHTSMANAGEMENT[gGEOPORTALRIGHTSMANAGEMENT.apiKey]
                   .resources['GEOGRAPHICALGRIDSYSTEMS.MAPS:WMSC'].url,
             {
@@ -634,6 +634,7 @@ App.layout = (function() {
             } else {
                 var filterstring = 'Z' + zonetxt;
             }
+            
             var obj = Ext.util.JSON.decode(action.response.responseText); // response object with the mapfile path for WFS
             rock_lyr.url = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=" + mappath + obj.mapfile + "&";
             rock_lyr.setVisibility(true); // display the map
@@ -1082,6 +1083,43 @@ App.layout = (function() {
             }
         }
         
+        // Give the name of the view for visible rocks        
+        function exportGis() {
+            if (rock_lyr.visibility == false) {
+                alert("Aucune roche n'est affichée...");
+            } else if (rock_lyr.url == myWFS) {
+                var giswin = new Ext.Window({
+                    title: 'Vue PostgreSQL',
+                    width: 250,
+                    height: 100,
+                    layout: 'fit',
+                    shadow: true,
+                    items: [{
+                        xtype: 'textarea',
+                        id: 'kmlstring',
+                        value: 'Toutes les roches sont affichées : chargez la table "rocks"',
+                        readOnly: true
+                    }]
+                });
+                giswin.show();
+            } else {
+                var giswin = new Ext.Window({
+                    title: 'Vue PostgreSQL',
+                    width: 270,
+                    height: 100,
+                    layout: 'fit',
+                    shadow: true,
+                    items: [{
+                        xtype: 'textarea',
+                        id: 'kmlstring',
+                        value: 'Un filtre est appliqué : chargez la table :\n "rockview' + phpsession + '"',
+                        readOnly: true
+                    }]
+                });
+                giswin.show();
+            }
+        }
+        
         // New definition of OpenLayers.Format.KML.write() function
         function write_2(kmlfile, features) {
             
@@ -1137,7 +1175,7 @@ App.layout = (function() {
         }
     
         var panel = new Ext.Panel({
-            title: "Cartes",
+            title: "Navigation",
             defaults: {
                 autoWidth: true,
                 autoHeight: true,
@@ -1196,6 +1234,12 @@ App.layout = (function() {
                         id: 'exportKml',
                         text: 'Exporter les roches en KML',
                         handler: exportKml
+                    }, {
+                        title: 'exportGis',
+                        xtype: 'button',
+                        id: 'exportGis',
+                        text: 'Visualiser sous SIG',
+                        handler: exportGis
                     }]
                 }, {
                     title: 'Légende',
@@ -1281,7 +1325,7 @@ App.layout = (function() {
             var carto = createCarto();
             var layerPanel = createLayerPanel();
             var footer = new Ext.Panel({
-                title: 'En plus',
+                title: '?',
                 frame: true,
                 defaults: {
                     autoHeight: true,
