@@ -1,12 +1,10 @@
 <?php
 
-session_start ();
+include 'config.php';
 
 /*
-* Initialize SQL query
+* Useful variables
 */
-ini_set ('max_execution_time', 0); // no time limit
-$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres");
 $query = '';
 $querybool = false; // indicator to know if query has been written
 

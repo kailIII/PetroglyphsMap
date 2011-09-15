@@ -1,14 +1,11 @@
 <?php
 
-session_start ();
-
-$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
+include 'config.php';
 
 /*
-* Initialize SQL query
+* Useful variables
 */
-ini_set ('max_execution_time', 0); // no time limit
-$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres");
+$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
 
 /*
 * Useful variables
