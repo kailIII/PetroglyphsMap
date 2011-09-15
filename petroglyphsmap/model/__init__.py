@@ -49,59 +49,6 @@ def figureid_from_zgrf(zonenum, groupnum, rocknum, figurenumb):
         filter(Zone.zone_number==zonenum).one()
     return fg.figure_id
 
-## Statistics on Zone, Group, Rock, Figure
-def countrock_by_z(zonenum):
-    """Counts the number of rocks in a given zone, knowing the zone number"""
-    rcks = session.query(Rock).\
-        filter(Rock.group_id==Group.id).\
-        filter(Group.zone_id==Zone.zone_id).\
-        filter(Zone.zone_number==zonenum).all()
-    nbRcks = session.query(func.count(rcks))
-    return nbRcks
-    
-def countrock_by_zg(zonenum, groupnum):
-    """Counts the number of rocks in a given group, knowing the ZG numbers"""
-    rcks = session.query(Rock).\
-        filter(Rock.group_id==Group.id).\
-        filter(Group.group_number==groupnum).\
-        filter(Group.zone_id==Zone.zone_id).\
-        filter(Zone.zone_number==zonenum).all()
-    nbRcks = session.query(func.count(rcks))
-    return nbRcks
-
-def countfig_by_z(zonenum):
-    """Counts the number of figures in a given zone, knowing the zone numbers"""
-    figs = session.query(Figure).\
-        filter(Figure.rock_id==Rock.rock_id).\
-        filter(Rock.group_id==Group.id).\
-        filter(Group.zone_id==Zone.zone_id).\
-        filter(Zone.zone_number==zonenum).all()
-    nbFigs = session.query(func.count(figs))
-    return nbFigs
-
-def countfig_by_zg(zonenum, groupnum):
-    """Counts the number of figures in a given group, knowing the ZG numbers"""
-    figs = session.query(Figure).\
-        filter(Figure.rock_id==Rock.rock_id).\
-        filter(Rock.group_id==Group.id).\
-        filter(Group.group_number==groupnum).\
-        filter(Group.zone_id==Zone.zone_id).\
-        filter(Zone.zone_number==zonenum).all()
-    nbFigs = session.query(func.count(figs))
-    return nbFigs
-
-def countfig_by_zgr(zonenum, groupnum, rocknum):
-    """Counts the number of figures on a given rock, knowing the ZGR numbers"""
-    figs = session.query(Figure).\
-        filter(Figure.rock_id==Rock.rock_id).\
-        filter(Rock.rock_number==rocknum).\
-        filter(Rock.group_id==Group.id).\
-        filter(Group.group_number==groupnum).\
-        filter(Group.zone_id==Zone.zone_id).\
-        filter(Zone.zone_number==zonenum).all()
-    nbFigs = session.query(func.count(figs))
-    return nbFigs
-
 ## Load Geometry functions
 GeometryDDL(Zone.__table__)
 GeometryDDL(Group.__table__)
