@@ -26,12 +26,7 @@ App.layout = (function() {
     var map, center, zone_lyr, rock_lyr, layerStore, propSym_popup, gridWin, pieWin, styleMap_rock, styleMap_rock_label;
     var propSymLyr = null;
     var popup = null;
-    var phpsession = document.cookie.substring(10, document.cookie.length-1);
-    
-    // URL and path variables : adapt THIS according to the server
-    var weburl = 'http://127.0.0.1:80/'; // URL for the GIS
-    var mappath = 'C:\\ms4w\\Apache\\htdocs\\'; // path to MapFiles
-    var MSurl = 'http://127.0.0.1:80/cgi-bin/mapserv.exe?map='; // URL for MapServer
+    var phpsession = document.cookie.substring(10, document.cookie.length-1);    
     var myWFS = MSurl + mappath + 'wfs.map&'; // original WFS url
     
     // Projection variables
