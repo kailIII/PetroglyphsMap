@@ -1,10 +1,6 @@
 <?php
 
-/*
-* Initialize SQL query
-*/
-ini_set ('max_execution_time', 0); // Aucune limite d'execution
-$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres"); // Base géographique du Bego
+include '../config.php';
 
 /*
 * Postgres query
