@@ -20,15 +20,21 @@ OpenLayers.ProxyHost="proxy.php?url=";
 
 App.layout = (function() {
     /*
-     * Private
-     */
+    * Private
+    */
     
-    var map, center, center_lon, center_lat, zone_lyr, rock_lyr, myWFS, layerStore, popup2, styleMap_rock, styleMap_rock_label, picSpan;
+    var map, center, zone_lyr, rock_lyr, layerStore, propSym_popup, gridWin, pieWin, styleMap_rock, styleMap_rock_label;
     var propSymLyr = null;
     var popup = null;
     var phpsession = document.cookie.substring(10, document.cookie.length-1);
-    var mappath = 'C:\\ms4w\\Apache\\htdocs\\';
     
+    // URL and path variables : adapt THIS according to the server
+    var weburl = 'http://127.0.0.1:80/'; // URL for the GIS
+    var mappath = 'C:\\ms4w\\Apache\\htdocs\\'; // path to MapFiles
+    var MSurl = 'http://127.0.0.1:80/cgi-bin/mapserv.exe?map='; // URL for MapServer
+    var myWFS = MSurl + mappath + 'wfs.map&'; // original WFS url
+    
+    // Projection variables
     var epsg4326 = new OpenLayers.Projection("EPSG:4326");
     var lambert93 = new OpenLayers.Projection("EPSG:2154");
     var proj_geop = new OpenLayers.Projection("IGNF:GEOPORTALFXX");
@@ -43,16 +49,16 @@ App.layout = (function() {
     var createMap = function() {
         
         // Center definition : Vallée des Merveilles
-        center_lon = 7.4436;
-        center_lat = 44.0592;
-        center = new OpenLayers.LonLat(center_lon, center_lat);    // in WGS84 (longitude latitude)
+        center = new OpenLayers.LonLat(7.4436, 44.0592);    // in WGS84 (longitude latitude)
         center.transform(epsg4326, proj_geop);  // center is now in geoportal projection
         
-        var maxEx = new OpenLayers.Bounds(1050010, 6330080, 1070000, 6349980).transform(lambert93, proj_geop);
+        // Maximum extension for the GIS
+        var maxEx = new OpenLayers.Bounds(1050000, 6330000, 1070000, 6360000).transform(lambert93, proj_geop);
         var restEx = maxEx.clone();
         
+        // Map object
         return new OpenLayers.Map({
-            resolutions: Geoportal.Catalogue.RESOLUTIONS.slice(13, 18),
+            resolutions: Geoportal.Catalogue.RESOLUTIONS.slice(12, 18),
             projection: proj_geop,
             displayProjection: lambert93,
             units: proj_geop.getUnits(),
@@ -89,10 +95,7 @@ App.layout = (function() {
             map
         );
         
-        // WFS and WMS
-        myWFS = 'http://127.0.0.1:80/cgi-bin/mapserv.exe?map=' + mappath + 'wfs.map&';
-        
-        // Rocks stylemp
+        // Rocks default stylemp
         styleMap_rock = new OpenLayers.StyleMap({
             pointRadius: 4,
             fillColor: "blue",
@@ -101,6 +104,7 @@ App.layout = (function() {
             strokeColor: "blue"
         });
         
+        // Rocks stylemap with label (option)
         styleMap_rock_label = new OpenLayers.StyleMap({
             pointRadius: 4,
             fillColor: "blue",
@@ -119,7 +123,7 @@ App.layout = (function() {
         // Layers
         //
         
-        // IGN Ortho WMS
+        // IGN Ortho WMS - API Géoportail
         var orthos = new Geoportal.Layer.WMSC(
             'Ortho IGN',
             gGEOPORTALRIGHTSMANAGEMENT[gGEOPORTALRIGHTSMANAGEMENT.apiKey]
@@ -136,7 +140,7 @@ App.layout = (function() {
             }
         );
         
-        // IGN Scan25 WMS
+        // IGN Scan25 WMS - API Géoportail
         var scans =  new Geoportal.Layer.WMSC(
             'Carte IGN',
             gGEOPORTALRIGHTSMANAGEMENT[gGEOPORTALRIGHTSMANAGEMENT.apiKey]
@@ -153,7 +157,7 @@ App.layout = (function() {
             }
         );
         
-        // Zone WFS
+        // Zone WFS - custom MapServer
         zone_lyr = new OpenLayers.Layer.WFS(
             "Zones",
             myWFS,
@@ -161,13 +165,13 @@ App.layout = (function() {
                 typename: 'zones'
             },
             {
-                visibility: false,
+                visibility: false,  // defaults is not visible
                 projection: lambert93,
                 extractAttributes: true
             }
         );
         
-        // Rock WFS
+        // Rock WFS - custom MapServer
         rock_lyr = new OpenLayers.Layer.WFS(
             "Roches<span id='rockstatus'></span>",
             myWFS,
@@ -175,7 +179,7 @@ App.layout = (function() {
                 typename: 'rocks'
             },
             {
-                visibility: false,
+                visibility: false,  // defaults is not visible
                 styleMap: styleMap_rock,
                 projection: lambert93,
                 extractAttributes: true
@@ -218,25 +222,18 @@ App.layout = (function() {
         map.addControl(navControl);
         navControl.activate();
         
-        // OpenLayers loading panel
-        /*var loadingPan = new OpenLayers.Control.LoadingPanel({
-            title: 'Chargement en cours'
-        });
-        map.addControl(loadingPan);
-        loadingPan.activate();*/
-        
-        // create select feature control for features
+        // Create select feature control for features on Zones and Rocks
         var selectControl = new OpenLayers.Control.SelectFeature(
             [zone_lyr, rock_lyr],
             {
                 onSelect: createPopup,
-                onUnselect: destroyPopup
+                onUnselect: function(feature) {popup.destroy()}
             }
         );
         map.addControl(selectControl);
         selectControl.activate();
         
-        // define function to change the values of a given field in a JSON object
+        // Define function to change the values of a given field in a JSON object
         function replaceByValue(json, field, oldvalue, newvalue) {
             for( var k = 0; k < json.length; ++k ) {
                 if( oldvalue == json[k][field] ) {
@@ -245,22 +242,26 @@ App.layout = (function() {
             }
         }
         
-        // define "createPopup" function
+        //
+        // Popup definition
+        //
+        
+        // Define "createPopup" function
         function createPopup(feature) {
-            var popup_title, popup_html, win, winTitle, picwin;
+            var popup_title, popup_html, winTitle, picwin;
             var z = feature.attributes.zone_number;
             var g = feature.attributes.group_number;
             var r = feature.attributes.rock_number;
-            var path = 'http://127.0.0.1/photos/Z' + z + '/G' + g + '/R' + r + '.jpg';
+            var pic_path = weburl + 'photos/Z' + z + '/G' + g + '/R' + r + '.jpg';
             
-            // description of the feature, according to its type
-            if (feature.fid[0]=='z') {
+            // Description of the feature, according to its type
+            if (feature.fid[0]=='z') {  // Zone description
                 popup_title = "Zone";
                 popup_html = "Zone "  + z + '<br/>'
                     + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
                     + "<span id='pieLink' class='link'>Types des figures</span>";
                 winTitle = 'Figures - Zone ' + z;
-            } else if (feature.fid[0]=='r') {
+            } else if (feature.fid[0]=='r') {   // Rock description
                 popup_title = "Roche";
                 popup_html = "Zone " + z + '<br/>'
                     + "Groupe " + g + '<br/>'
@@ -271,11 +272,11 @@ App.layout = (function() {
                     + "Année de lever : " + feature.attributes.year + '<br/>'
                     + "<span id='listLink' class='link'>Tableau des figures</span><br/>"
                     + "<span id='pieLink' class='link'>Types des figures</span><br/>"
-                    + "<span id='pictureSpan' class='link'><a href='" + path + "'>Plan de roche</a></span>";
+                    + "<span id='pictureSpan' class='link'><a href='" + pic_path + "'>Plan de roche</a></span>";
                 winTitle = 'Figures - Roche ' + feature.attributes.rock_number;
             }
             
-            // Rock popup
+            // Popup object
             popup = new GeoExt.Popup({
                 title: popup_title,
                 location: feature,
@@ -288,19 +289,22 @@ App.layout = (function() {
                 closable: true,
                 map: map,
                 feature: feature
-            });
-            
+            });            
             popup.show();
             
-            // Rock tooltip
+            // Rock tooltip, to show image in the popup
             var tt = new Ext.ToolTip({
                 target: 'pictureSpan',
-                html: "<img src='" + path + "' width=400 />",
+                html: "<img src='" + pic_path + "' width=400 />",
                 autoHeight: true,
                 width: 400
             });
             
-            // Figure tooltip
+            //
+            // Grid definition
+            //
+            
+            // Figure tooltip, to show image in the figures grid
             function addTooltip(value, metadata, record, rowIndex, colIndex, store){
                 metadata.attr = 'ext:qtip="<img src='+"'"+value+"'"+' height=400 />"';
                 return value;
@@ -325,13 +329,11 @@ App.layout = (function() {
                 }
                 
                 if (jsonData[0] == null) {
-                    alert("Aucune figure n'a été référencée.");
+                    alert("Aucune figure n'a été référencée."); // no listed figures, so no grid to do
                 } else {
                     var store = new Ext.data.JsonStore ({
-                        // store configs
                         autoDestroy: true,
                         storeId: 'store',
-                        // reader configs
                         idIndex: 0,
                         fields: featFields,
                         data: jsonData
@@ -363,7 +365,7 @@ App.layout = (function() {
                             sortable: false,
                             dataIndex: 'image',
                             width: 150,
-                            renderer: addTooltip
+                            renderer: addTooltip    // to show images whe mouse is over the cell
                     }];
                     
                     // If feature is a zone, adding two columns to default columns
@@ -382,12 +384,13 @@ App.layout = (function() {
                         }
                     });
                     
-                    if (typeof(win) != "undefined") {
-                        win.destroy();
+                    // Replace any existing grid window
+                    if (typeof(gridWin) != "undefined") {
+                        gridWin.destroy();
                     }
                     
                     // display the grid in a window
-                    win = new Ext.Window ({
+                    gridWin = new Ext.Window ({
                         title: winTitle,
                         autoWidth: true,
                         height: 400,
@@ -397,14 +400,12 @@ App.layout = (function() {
                         y: 150,
                         items: grid,
                         shadow: true
-                    });
-                    
-                    win.show();
+                    });                    
+                    gridWin.show();
                 }
             }
             
             function createPie(result, request) {
-                var win;
                 var jsonData = Ext.util.JSON.decode(result.responseText);
                 if (jsonData[0] == null) {
                     alert("Aucune figure n'a été référencée.");
@@ -455,24 +456,24 @@ App.layout = (function() {
                         }
                     });
                     
-                    if (typeof(win) != "undefined") {
-                        win.destroy();
+                    if (typeof(pieWin) != "undefined") {
+                        pieWin.destroy();
                     }
                     
                     // display the pie in a window
-                    win = new Ext.Window ({
+                    pieWin = new Ext.Window ({
                         title: winTitle,
                         width: 400,
                         autoHeight: true,
                         layout: 'fit',
                         items: piePanel,
                         shadow: true
-                    });
-                    
-                    win.show();
+                    });                    
+                    pieWin.show();
                 }
             }
             
+            // Send query to the DB for creating pie
             function postPie() {
                 // get the figures from selected rock
                 Ext.Ajax.request({
@@ -486,6 +487,7 @@ App.layout = (function() {
                 });
             }
             
+            // Send query to the DB for creating list
             function postList() {
                 var bool = document.getElementById('checkbox_filter').checked;
                 // get the figures from selected rock
@@ -495,19 +497,16 @@ App.layout = (function() {
                     params: {
                         type: feature.fid[0],
                         id: (feature.fid.split('.'))[1],
-                        checkbox: bool
+                        checkbox: bool  // is filter activated for the list ?
                     },
                     success: createGrid
                 });
             }
             
+            // Display the window when link is clicked
             document.getElementById('listLink').onclick = postList;            
             document.getElementById('pieLink').onclick = postPie;
             
-        }
-        
-        function destroyPopup(feature) {
-            popup.destroy();
         }
         
         // Loading window while data are loading to the map
@@ -596,7 +595,18 @@ App.layout = (function() {
                             ['9', 9],
                             ['10', 10],
                             ['11', 11],
-                            ['12', 12]]
+                            ['12', 12],
+                            ['13', 13],
+                            ['14', 14],
+                            ['15', 15],
+                            ['16', 16],
+                            ['17', 17],
+                            ['18', 18], 
+                            ['19', 19],
+                            ['20', 20],
+                            ['21', 21],
+                            ['22', 22],
+                            ['23', 23]]
                     }),
                     valueField: 'zoneNumber',
                     displayField: 'zoneTxt',
@@ -636,7 +646,8 @@ App.layout = (function() {
             }
             
             var obj = Ext.util.JSON.decode(action.response.responseText); // response object with the mapfile path for WFS
-            rock_lyr.url = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=" + mappath + obj.mapfile + "&";
+            rock_lyr.url = MSurl + mappath + obj.mapfile.replace('/', '\\') + "&";
+			console.log(mappath + ' ' + obj.mapfile);
             rock_lyr.setVisibility(true); // display the map
             document.getElementById('formstatus').innerHTML = 'Filtre activé'; // status update
             document.getElementById('formstatus').className = 'filter-on';
@@ -851,8 +862,8 @@ App.layout = (function() {
         // Destroy the thematic map
         function carto_destroy() {
             Ext.getCmp('propLegend').setVisible(false);
-            if (typeof(popup2) != 'undefined') {
-                popup2.destroy();
+            if (typeof(propSym_popup) != 'undefined') {
+                propSym_popup.destroy();
             }
             // If the layer is already on the map : destroy it
             if (propSymLyr != null) {
@@ -870,7 +881,7 @@ App.layout = (function() {
         // Add a layer of proportional circles, based on JSON response
         function addpropSymbols(result, action) {
             var obj = Ext.util.JSON.decode(action.response.responseText);
-            var myUrl = "http://127.0.0.1:80/cgi-bin/mapserv.exe?map=" + mappath + obj.mapfile + "&";
+            var myUrl = MSurl + mappath + obj.mapfile + "&";
             var minsize = Ext.getCmp('minsize').getValue();
             var maxsize = Ext.getCmp('maxsize').getValue();
             
@@ -916,19 +927,18 @@ App.layout = (function() {
                 {
                     hover: true,
                     onSelect: createPopupSym,
-                    onUnselect: destroyPopupSym
+                    onUnselect: function(feature) {propSym_popup.destroy()}
                 }
             );
             map.addControl(propSelect);
             propSelect.activate();            
             
-            /*
-            * Draw the legend images with Canvas
-            */
-            var canvas = document.getElementById('canvas');
-            // delete images from the legend
-            canvas.width = canvas.width;
-            // get a reference to the canvas
+            //
+            // Draw the legend images with Canvas
+            //
+            var canvas = document.getElementById('canvas'); // delete images from the legend
+            canvas.width = canvas.width; // get a reference to the canvas
+            
             var ctx = canvas.getContext("2d");
             var xOffset = 20;
             var yOffset = 5;
@@ -992,7 +1002,7 @@ App.layout = (function() {
         
         // Popup for values of proportional symbols
         function createPopupSym(feature) {
-            popup2 = new GeoExt.Popup({
+            propSym_popup = new GeoExt.Popup({
                 location: feature,
                 autoWidth: true,
                 autoHeight: true,
@@ -1004,13 +1014,8 @@ App.layout = (function() {
                 map: map,
                 feature: feature
             });
-            popup2.show();
+            propSym_popup.show();
         };
-        
-        // Destroy popup
-        function destroyPopupSym(feature) {
-            popup2.destroy();
-        }
         
         // Re-definition of Geometry class : new getSize method
         function Geometry(symbol, minSize, maxSize, minValue, maxValue){
@@ -1053,14 +1058,8 @@ App.layout = (function() {
                 var l = rock_lyr.clone();
                 var f = l.features;
                 var kmlwriter = new OpenLayers.Format.KML();
-
-                var kmlobj = write_2(kmlwriter, f);
-                
-                if (window.ActiveXObject) /*code for IE*/ {
-                    var kmlstring = kmlobj.xml;
-                } else /*code for Mozilla, Firefox, Opera, etc.*/ {
-                    var kmlstring = new XMLSerializer().serializeToString(kmlobj);
-                }
+                var kmlobj = write_2(kmlwriter, f);                
+                var kmlstring = new XMLSerializer().serializeToString(kmlobj);
                 l.destroy();
                 
                 var kmlwin = new Ext.Window({
@@ -1083,36 +1082,21 @@ App.layout = (function() {
             }
         }
         
-        // Give the name of the view for visible rocks        
+        // Give the WFS url for visible rocks, for desktop GIS use
         function exportGis() {
             if (rock_lyr.visibility == false) {
                 alert("Aucune roche n'est affichée...");
-            } else if (rock_lyr.url == myWFS) {
-                var giswin = new Ext.Window({
-                    title: 'Vue PostgreSQL',
-                    width: 250,
-                    height: 100,
-                    layout: 'fit',
-                    shadow: true,
-                    items: [{
-                        xtype: 'textarea',
-                        id: 'kmlstring',
-                        value: 'Toutes les roches sont affichées : chargez la table "rocks"',
-                        readOnly: true
-                    }]
-                });
-                giswin.show();
             } else {
                 var giswin = new Ext.Window({
-                    title: 'Vue PostgreSQL',
-                    width: 270,
-                    height: 100,
+                    title: 'Adresse WFS',
+                    width: 300,
+                    height: 150,
                     layout: 'fit',
                     shadow: true,
                     items: [{
                         xtype: 'textarea',
-                        id: 'kmlstring',
-                        value: 'Un filtre est appliqué : chargez la table :\n "rockview' + phpsession + '"',
+                        id: 'wfsstring',
+                        value: 'URL du WFS :\n' + rock_lyr.url,
                         readOnly: true
                     }]
                 });
@@ -1145,7 +1129,7 @@ App.layout = (function() {
         function createPlacemarkXML_2(kmlfile, feature) {            
             // Style
             var placemarkStyle = kmlfile.createElementNS('', "styleUrl");
-            placemarkStyle.appendChild(kmlfile.createTextNode('http://127.0.0.1/style.kml#rockstyle'));
+            placemarkStyle.appendChild(kmlfile.createTextNode(weburl + 'style.kml#rockstyle'));
             
             // Placemark name
             var placemarkName = kmlfile.createElementNS('', "name");
@@ -1238,7 +1222,7 @@ App.layout = (function() {
                         title: 'exportGis',
                         xtype: 'button',
                         id: 'exportGis',
-                        text: 'Visualiser sous SIG',
+                        text: 'Visualiser sous logiciel SIG',
                         handler: exportGis
                     }]
                 }, {
@@ -1339,7 +1323,7 @@ App.layout = (function() {
                     html: "<p>&copy;Gabriel Vatin - LDPL</p><p>AGPL <a href='http://www.gnu.org/licenses/agpl.html'>(?)</a></p>"
                 }, {
                     title: 'Documentation',
-                    html: "<a href='http://www.google.com'>Guide d'utilisation</a><br/><a href='http://www.ensg.eu'>Documentation technique</a>"
+                    html: "<a href='/doc/UserGuide.pdf'>Guide d'utilisation</a><br/><a href='/doc/DevGuide.pdf'>Documentation technique</a>"
                 }, {
                     title: 'Administration de la base géographique',
                     html: "<a href='/admin'>Index</a>"
