@@ -8,4 +8,10 @@ session_start ();
 ini_set ('max_execution_time', 0); // no time limit
 $sessionpg = pg_connect("host=#### port=#### dbname=#### user=#### password=####");
 
+/*
+* Variables
+*/
+$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
+$query = '';
+
 ?>

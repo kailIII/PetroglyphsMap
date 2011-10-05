@@ -1,0 +1,2 @@
+CONNECTIONTYPE postgis
+CONNECTION "dbname=#### host=#### port=#### user=#### password=####"

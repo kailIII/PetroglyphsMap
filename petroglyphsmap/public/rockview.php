@@ -1,37 +1,28 @@
 <?php
 
-session_start ();
-
-$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
-
-/*
-* Initialize SQL query
-*/
-ini_set ('max_execution_time', 0); // Aucune limite d'execution
-$sessionpg = pg_connect("host=localhost port=5432 dbname=begogeo user=postgres password=postgres"); // Base géographique du Bego
+include 'config.php';
 
 /*
 * Useful variables
 */
-$identitystring = str_replace('*', '%', $_POST['identitystring']); // on récupère le code figure demandé dans le formulaire, en remplacant * par % (pour le SQL)
+$identitystring = str_replace('*', '%', $_POST['identitystring']); // asked figure code is fetch from the form, and "*" is replaced by "%" (for SQL)
 $zonenb = $_POST['zonecombo'];
 $_SESSION['identitystring'] = $identitystring;
 $id = $_POST['log'];
-
-$viewname = "rockview".$id; // nom de la vue unique qui va être créée
-$mapname = "tmp/wfs_rockview".$id.".map"; // nom du mapfile unique qui va être créé
+$viewname = "rockview".$id; // unique view name that will be generated
+$mapname = "tmp/wfs_rockview".$id.".map"; // unique mapfile name that will be generated
 
 $_SESSION['rockview'] = $viewname;
 
 /*
 * New temporary Mapfile, specific to the filter
 */
-$map = ms_newMapObj($map_path."wfs_rockview.map"); // mapfile WFS de référence pour créer la vue
-$map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // on modifie le chemin d'accès URL
-$rocks = $map->getLayerByName("rocks"); // on modifie le layer 'rocks'
+$map = ms_newMapObj($map_path."wfs_rockview.map"); // reference mapfile WFS to create the view
+$map->setMetaData('wfs_onlineresource', 'http://127.0.0.1/cgi-bin/mapserv.exe?map=tmp/wfs_'.$viewname.'.map'); // modifying WFS url
+$rocks = $map->getLayerByName("rocks"); // modifying 'orcks' layer
 $rocks->set('data', 'geo_point FROM ( select r.rock_id, r.rock_number, r.point_x, r.point_y, r.point_z, r.geo_point, r.year, g.group_number, z.zone_number from '.$viewname.' r join ("group" g join zone z on g.zone_id=z.zone_id) on r.group_id = g.group_id ) as subquery using unique rock_id using srid=2154');
-// on ne change que le nom de la table (vue) où vont être stockées les données de la requête
-$map->save($mapname); // sauvagarde dans le dossier /tmp
+// we only change the name of the table (actually, a view) where the data will be stored
+$map->save($mapname); // saving in the '/tmp' directory
 
 /*
 * Postgres view

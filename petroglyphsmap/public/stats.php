@@ -5,11 +5,6 @@ include 'config.php';
 /*
 * Useful variables
 */
-$map_path = 'C:\\ms4w\\Apache\\htdocs\\';
-
-/*
-* Useful variables
-*/
 $stattype = $_POST['stattype'];
 $scale = $_POST['scale'];
 $filterstring = $_POST['filterstring'];

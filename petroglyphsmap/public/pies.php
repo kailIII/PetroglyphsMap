@@ -12,7 +12,7 @@ $id = $_POST['id'];
 * Postgres query
 */
 if ($type == 'r') { // rock analysis
-    $query = '
+    $query_type = '
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
         FROM figure, rock
         WHERE figure.rock_id = rock.rock_id
@@ -20,7 +20,7 @@ if ($type == 'r') { // rock analysis
         GROUP BY type
         ORDER BY type';
 } elseif ($type == 'z') {   // zone analysis
-    $query = '
+    $query_type = '
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
         FROM figure, rock, "group"
         WHERE figure.rock_id = rock.rock_id
@@ -30,7 +30,7 @@ if ($type == 'r') { // rock analysis
         ORDER BY count';
 }
 
-$result = pg_query($sessionpg, $query);
+$result = pg_query($sessionpg, $query_type);
 
 /*
 * JSON response
