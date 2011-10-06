@@ -412,7 +412,7 @@ App.layout = (function() {
                     replaceByValue(jsonData, 'type', 'T', 'Attelages');
                     replaceByValue(jsonData, 'type', 'H', 'Anthropomorphes');
                     replaceByValue(jsonData, 'type', 'R', 'Figures géométriques');
-                    replaceByValue(jsonData, 'type', 'N', 'Non identifiées');
+                    replaceByValue(jsonData, 'type', 'N', 'Non représentatives');
                     replaceByValue(jsonData, 'type', '', 'Pas description');
                     replaceByValue(jsonData, 'type', 'A', 'Anthropomorphes simples');
                     
