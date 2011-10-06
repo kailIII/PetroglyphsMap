@@ -1,0 +1,2 @@
+CONNECTIONTYPE postgis
+CONNECTION "dbname=begogeo host=localhost port=5432 user=postgres password=postgres"

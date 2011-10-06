@@ -32,7 +32,7 @@ LAYER
         "gml_include_items"     "zone_number,geo_centroid,nb"
         "gml_featureid"         "zone_id" ## REQUIRED
     END
-    INCLUDE "connect_info.map"
+    INCLUDE "config.map"
     DATA 'geo_centroid FROM (select zone_id, zone_number, geo_centroid, nb from viewname) as subquery using unique zone_id using srid=2154'
     STATUS ON
 END #end zone layer

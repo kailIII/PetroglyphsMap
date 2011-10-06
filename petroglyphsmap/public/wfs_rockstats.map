@@ -32,7 +32,7 @@ LAYER
         "gml_include_items"     "rock_id,rock_number,geo_point,nb"
         "gml_featureid"         "rock_id" ## REQUIRED
     END
-    INCLUDE "connect_info.map"
+    INCLUDE "config.map"
     DATA 'geo_point FROM (select rock_id, rock_number, geo_point, nb from viewname) as subquery using unique rock_id using srid=2154'
     STATUS ON
 END #end rocks layer
