@@ -6,13 +6,10 @@ include '../config.php';
 * Postgres query
 */
 // Check if the rock already exists
-$query0 = 'SELECT rock.rock_id
-    FROM rock, "group", zone '.
-    "WHERE rock.rock_number LIKE '".$_POST['rocknumber']."' ".
-    'AND rock.group_id = "group".group_id
-    AND "group".group_number = '.$_POST['groupnumber'].'
-    AND "group".zone_id = zone.zone_id
-    AND zone.zone_number = '.$_POST['zonenumber'];
+$query0 = "SELECT rock.rock_id
+    FROM rock
+    WHERE rock.rock_number LIKE '".$_POST['rocknumber']."'
+    AND rock.group_id = ". $_POST['groupid'];
 
 $result = pg_query($sessionpg, $query0);
 $row = pg_fetch_row($result);

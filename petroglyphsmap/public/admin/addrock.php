@@ -10,21 +10,14 @@ include '../config.php';
 $query0 = 'SELECT rock.rock_id
     FROM rock, "group", zone '.
     "WHERE rock.rock_number LIKE '".$_POST['rocknumber']."' ".
-    'AND rock.group_id = "group".group_id
-    AND "group".group_number = '.$_POST['groupnumber'].'
-    AND "group".zone_id = zone.zone_id
-    AND zone.zone_number = '.$_POST['zonenumber'];
+    'AND rock.group_id = '.$_POST['groupid'];
 
 $result = pg_query($sessionpg, $query0);
 
 if (!pg_fetch_row($result)) {
     $query = "INSERT INTO rock (rock_number, group_id, point_x, point_y, point_z, year, geo_point) VALUES (
         '".$_POST['rocknumber']."', ".
-        '(SELECT "group".group_id
-        FROM "group", zone
-        WHERE zone.zone_number = '.$_POST['zonenumber'].'
-        AND "group".zone_id = zone.zone_id
-        AND "group".group_number = '.$_POST['groupnumber'].'), '.
+        $_POST['groupid'].', '.
         $_POST['x'].', '.
         $_POST['y'].', '.
         $_POST['z'].', '.

@@ -5,18 +5,30 @@ include '../config.php';
 /*
 * Postgres query
 */
-
-if( isset($_POST['figurenumber']) ) {   // the picture is for a figure
+// Figure already exists on the DB
+// Figure doesn't exist on the DB
+if ( isset($_POST['identity']) ) {
+    $query = 'SELECT zone_number, group_number, rock_number, figure_number
+    FROM zone, "group", rock, figure'."
+    WHERE figure.figure_number LIKE '".$_POST['figurenumber']."'
+	AND figure.rock_id = ".$_POST['rockid'].'
+	AND rock.rock_id = figure.rock_id
+    AND rock.group_id = "group".group_id
+    AND "group".zone_id = zone.zone_id';
+}
+elseif( isset($_POST['figurenumber']) ) {   // the picture is for a figure
     $query = 'SELECT zone_number, group_number, rock_number, figure_number
     FROM zone, "group", rock, figure
     WHERE figure.figure_id = '.$_POST['figurenumber'].'
     AND figure.rock_id = rock.rock_id
     AND rock.group_id = "group".group_id
     AND "group".zone_id = zone.zone_id';
-} else {   // the picture is for a rock
+}
+// Rock already exists on the DB
+else {   // the picture is for a rock
     $query = 'SELECT zone_number, group_number, rock_number
     FROM zone, "group", rock
-    WHERE rock.rock_id = '.$_POST['rocknumber'].'
+    WHERE rock.rock_id = '.$_POST['rockid'].'
     AND rock.group_id = "group".group_id
     AND "group".zone_id = zone.zone_id';
 }

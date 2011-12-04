@@ -13,10 +13,10 @@
         <fieldset style='float: left;'>
             <legend>Référencement</legend>
             <p>Zone number:
-            <select type="text" name="zonenumber" id="zonenumber">
+            <select type="text" name="zoneid" id="zoneid">
             </select></p>
             <p>Group number:
-            <select type="text" name="groupnumber" id="groupnumber"></select></p>
+            <select type="text" name="groupid" id="groupid"></select></p>
             <p>Rock number:
             <select type="text" name="rocknumber" id="rocknumber"></select></p>
             <p>Current data:<div id='datarock'></div></p>
@@ -46,11 +46,11 @@
                 for (var i = 0; i < data.length; i++) {
                     options += '<option value="' + data[i].zone_id + '">' + data[i].zone_number + '</option>';
                 }
-                $("#zonenumber").html(options);
+                $("#zoneid").html(options);
             }
         );
 
-        $("#zonenumber").change(
+        $("#zoneid").change(
             function() {
                 $.getJSON(
                     'getGroups.php?',
@@ -60,13 +60,13 @@
                         for (var i = 0; i < data.length; i++) {
                             options += '<option value="' + data[i].group_id + '">' + data[i].group_number + '</option>';
                         }
-                        $("#groupnumber").html(options);
+                        $("#groupid").html(options);
                     }
                 );
             }
         );
 
-        $("#groupnumber").change(
+        $("#groupid").change(
             function() {
                 $.getJSON(
                     'getRocks.php?',

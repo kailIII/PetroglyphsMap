@@ -7,27 +7,27 @@
 </head>
 
 <body>
-    <form name="addfigureform" action="/admin/addfigure.php" method="POST">
+    <form name="addfigureform" enctype="multipart/form-data" action="/admin/addfigure.php" method="POST">
         <h1>Nouvelle figure</h1>
         
         <fieldset style='float: left;'>
             <legend>Référencement</legend>
             <p>Zone number:
-            <select type="text" name="zonenumber" id="zonenumber"></select></p>
+            <select type="text" name="zoneid" id="zoneid"></select></p>
             <p>Group number:
-            <select type="text" name="groupnumber" id="groupnumber"></select></p>
+            <select type="text" name="groupid" id="groupid"></select></p>
             <p>Rock number:
-            <select type="text" name="rocknumber" id="rocknumber"></select></p>
+            <select type="text" name="rockid" id="rockid"></select></p>
             <p>Face:
             <input type="text" name="face" /></p>
             <p>Figure number:
-            <input type="text" name="figurenumber" /></p>
+            <input type="text" name="figurenumber" id="figurenumber" /></p>
         </fieldset>
 
         <fieldset>
             <legend>Description</legend>
             <p>Identity:
-            <input type="text" name="identity" /></p>
+            <input type="text" name="identity" id="identity" /></p>
             <p>Alternative identity (optionel):
             <input type="text" name="altidentity" /></p>
             <p>Image (optionel):
@@ -45,11 +45,11 @@
                 for (var i = 0; i < data.length; i++) {
                     options += '<option value="' + data[i].zone_id + '">' + data[i].zone_number + '</option>';
                 }
-                $("#zonenumber").html(options);
+                $("#zoneid").html(options);
             }
         );
 
-        $("#zonenumber").change(
+        $("#zoneid").change(
             function() {
                 $.getJSON(
                     'getGroups.php?',
@@ -59,13 +59,13 @@
                         for (var i = 0; i < data.length; i++) {
                             options += '<option value="' + data[i].group_id + '">' + data[i].group_number + '</option>';
                         }
-                        $("#groupnumber").html(options);
+                        $("#groupid").html(options);
                     }
                 );
             }
         );
 
-        $("#groupnumber").change(
+        $("#groupid").change(
             function() {
                 $.getJSON(
                     'getRocks.php?',
@@ -75,7 +75,7 @@
                         for (var i = 0; i < data.length; i++) {
                             options += '<option value="' + data[i].rock_id + '">' + data[i].rock_number + '</option>';
                         }
-                        $("#rocknumber").html(options);
+                        $("#rockid").html(options);
                     }
                 );
             }
