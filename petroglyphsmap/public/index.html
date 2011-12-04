@@ -3,13 +3,15 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>SIG des Merveilles</title>
+		<link rel="icon" type="image/png" href="/img/favicon.png" />
         <meta http-equiv="content-Type" content="text/html; charset=iso-8859-1" />
         <meta name="content-language" content="fr" />
-        <meta name="Author" content="Gabriel Vatin (2011)">
+        <meta name="Author" content="Gabriel Vatin 2011">
         <meta name="Copyright" content="Laboratoire Départemental de Préhistoire du Lazaret - LPDL">
         <meta name="Description" content="SIG des roches gravées de la Vallée des Merveilles - gestion, visualisation et analyse des données">
 
-        <link rel="stylesheet" type="text/css" href="css/style.css"></link>
+        <!-- Style sheets -->
+		<link rel="stylesheet" type="text/css" href="css/style.css"></link>
         <link rel="stylesheet" type="text/css" href="lib/ext/Ext/resources/css/ext-all.css"></link>
         <link rel="stylesheet" type="text/css" href="lib/ext/Ext/resources/css/xtheme-access.css"></link>
         <link rel="stylesheet" type="text/css" href="lib/openlayers/theme/default/style.css"></link>
@@ -20,7 +22,6 @@
         <script type="text/javascript" src="lib/ext/Ext/ext-all-debug.js"></script>
         <script type="text/javascript" src="lib/openlayers/lib/OpenLayers.js"></script>
         <script type="text/javascript" src="lib/geoext/lib/GeoExt.js"></script>
-        <script type="text/javascript" src="lib/mapfish/MapFish.js"></script>
         
         <!-- API Géportail -->
         <script type="text/javascript" src="http://api.ign.fr/geoportail/api?v=1.2-e&amp;key=8426192808060090342&amp;includeEngine=false&amp;"></script>
@@ -28,6 +29,16 @@
         
         <!-- Main app librairies -->
         <script type="text/javascript" src="config.js"></script>
+		<script type="text/javascript" src="app/lib/App/var.js"></script>
+		<script type="text/javascript" src="app/lib/App/map.js"></script>
+		<script type="text/javascript" src="app/lib/App/layers.js"></script>
+		<script type="text/javascript" src="app/lib/App/layerstore.js"></script>
+		<script type="text/javascript" src="app/lib/App/mapcontrols.js"></script>
+		<script type="text/javascript" src="app/lib/App/filter.js"></script>
+		<script type="text/javascript" src="app/lib/App/carto.js"></script>
+		<script type="text/javascript" src="app/lib/App/layerpanel.js"></script>
+		<script type="text/javascript" src="app/lib/App/credits.js"></script>
+		<script type="text/javascript" src="app/lib/App/toolbar.js"></script>
         <script type="text/javascript" src="app/lib/App/layout.js"></script>
         <script type="text/javascript" src="app/lib/App/main.js"></script>
         
