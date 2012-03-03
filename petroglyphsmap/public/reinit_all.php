@@ -42,4 +42,6 @@ unset($_SESSION['rockview']);
 unset($_SESSION['zonestats']);
 unset($_SESSION['rockstats']);
 
+session_destroy();
+
 ?>

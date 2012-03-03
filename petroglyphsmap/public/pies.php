@@ -12,13 +12,13 @@ $id = $_POST['id'];
 * Postgres query
 */
 if ($type == 'r') { // rock analysis
-    $query_type = '
+    $query_type = "
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
         FROM figure, rock
         WHERE figure.rock_id = rock.rock_id
-        AND rock.rock_id = '.$id.'
+        AND rock.rock_id = $id
         GROUP BY type
-        ORDER BY type';
+        ORDER BY type";
 } elseif ($type == 'z') {   // zone analysis
     $query_type = '
         SELECT UPPER(SUBSTRING(figure.identity from 1 for 1)) AS type, COUNT(figure.figure_id)
