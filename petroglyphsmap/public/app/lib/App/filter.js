@@ -30,7 +30,26 @@ var createFilter = function() {
 				fieldLabel: 'Code figure',
 				id: 'identitystring',
 				name: 'identitystring',
-				width: 110
+				width: 110,
+				listeners: {
+					change: function(){
+						Ext.getCmp('identitystring2').reset();
+					}
+				}
+			}, {
+				xtype: 'label',
+				text: 'OU'
+			}, {
+				xtype: 'textfield',
+				fieldLabel: 'Code alternatif',
+				id: 'identitystring2',
+				name: 'identitystring2',
+				width: 110,
+				listeners: {
+					change: function(){
+						Ext.getCmp('identitystring').reset();
+					}
+				}
 			}, {
 				xtype: 'combo',
 				id: 'zonecombo',
@@ -97,13 +116,19 @@ var createFilter = function() {
 			collapsible: true,
 			collapsed: true,
 			frame: true,
-			html: '<p><i>Code figure</i> : code des figures à afficher. Le caractère <i>*</i> représente tout texte.<br/>Ex : <i>c2*</i> pour rechercher les corniformes avec corps (tout code commençant par "C2").</p><p><i>Zone</i> : numéro de la (les) zone(s) à afficher.</p><p><i>Filtrer la description des roches</i> : la fiche descriptive des roches, activée par un clic, ne prendra en compte que les roches filtrées.</p>',
+			html: '<p><i>Code figure</i> : code des figures à afficher. Le caractère <i>*</i> représente tout texte.<br/>Ex : <i>c2*</i> pour rechercher les corniformes avec corps (tout code commençant par "C2").</p><p><i>Code alternatif</i> : idem, mais pour la version alternative du code. Ce champ vient en remplacement du premier code, non en complément.</p><p><i>Zone</i> : numéro de la (les) zone(s) à afficher.</p><p><i>Filtrer la description des roches</i> : la fiche descriptive des roches, activée par un clic, ne prendra en compte que les roches filtrées.</p>',
 			cls: 'help-box'
 		}]
 	});
 	
 	function displayFilter(result, action) {
-		var filtertxt = document.getElementById('identitystring').value;
+		if (document.getElementById('identitystring').value != '') {
+			var filtertxt = document.getElementById('identitystring').value;
+		} else if (document.getElementById('identitystring2').value != '') {
+			var filtertxt = document.getElementById('identitystring2').value;
+		} else {
+			var filtertxt = '';
+		}
 		var zonetxt = document.getElementById('zonecombo').value;
 		if (filtertxt != '' && zonetxt != 'Tout') {
 			var filterstring = filtertxt + ' & Z' + zonetxt;
@@ -131,9 +156,6 @@ var createFilter = function() {
 		filterform.form.submit({
 			url: 'rockview.php',
 			method: 'POST',
-			params: {
-				log: phpsession
-			},
 			reset: false,
 			failure: function(result, action) {
 				alert('Erreur : vérifier les champs...');

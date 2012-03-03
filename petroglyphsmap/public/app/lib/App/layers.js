@@ -23,7 +23,7 @@ var createLayers = function() {
 	var rock_context = {
 		getSize : function(feature){
 			if(map.getZoom() < 3) {
-				return("3");
+				return("0.7");
 			} else {
 				return("4");
 			}

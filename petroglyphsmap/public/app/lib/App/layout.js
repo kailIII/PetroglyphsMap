@@ -30,7 +30,7 @@ App.layout = (function() {
             layerStore = createLayerStore(layers);
             
             addMapControls();
-			var layerPanel = createLayerPanel();			
+			var layerPanel = createLayerPanel();
             var filterPanel = createFilter();
             var cartoPanel = createCarto();
             var creditsPanel = createCredits();
@@ -40,14 +40,6 @@ App.layout = (function() {
                 renderTo: "mapDiv",
                 layout: "border",
                 items: [{
-                    region: 'north',
-                    html: "<p align='center'>SIG des Merveilles</p>",
-                    //autoHeight : true,
-                    height: 20,
-                    border: false,
-                    margins: '0 0 0 0',
-					//collapsible: true
-                }, {
                     region: "center",
                     id: "mapdiv",
                     xtype: "gx_mappanel",

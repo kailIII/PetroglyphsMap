@@ -282,7 +282,7 @@ var addMapControls = function() {
 		
 		// Send query to the DB for creating list
 		function postList() {
-			var bool = document.getElementById('checkbox_filter').checked;
+			var filterBool = document.getElementById('checkbox_filter').checked;
 			// get the figures from selected rock
 			Ext.Ajax.request({
 				method: 'POST',
@@ -290,7 +290,7 @@ var addMapControls = function() {
 				params: {
 					type: feature.fid[0],
 					id: (feature.fid.split('.'))[1],
-					checkbox: bool  // is filter activated for the list ?
+					filter_on: filterBool  // is filter activated for the list ?
 				},
 				success: createGrid
 			});

@@ -147,9 +147,6 @@ var createCarto = function() {
 		carto.form.submit({
 			url: 'stats.php',
 			method: 'POST',
-			params: {
-				log: phpsession
-			},
 			reset: false,
 			failure: function(result, action) {
 				alert('Erreur');
